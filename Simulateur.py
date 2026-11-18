@@ -174,13 +174,35 @@ except Exception as exc:
     st.error(f"Classification ABC impossible : {exc}")
     st.stop()
 
+
+# Navigation de l'application
+PAGES = [
+    "Method Note & Guide",
+    "Comparer les politiques",
+    "Tableau de bord",
+    "Analyse de la demande",
+    "Catalogue",
+]
+
+if "page_active" not in st.session_state:
+    st.session_state.page_active = "Method Note & Guide"
+
 with st.sidebar:
     st.markdown("## 🥃 Maison Delorme")
     st.caption("STOCK INTELLIGENCE")
     st.divider()
-    page = st.radio("Navigation", ["Comparer les politiques", "Tableau de bord", "Analyse de la demande", "Catalogue"])
+
+    page = st.radio(
+        "Navigation",
+        PAGES,
+        key="page_active"
+    )
+
     st.divider()
-    reference = st.selectbox("Référence produit", produits["SKU"].dropna().tolist())
+    reference = st.selectbox(
+        "Référence produit",
+        produits["SKU"].dropna().tolist()
+    )
     st.caption("VERSION 1.2 · IDENTITÉ ABC")
 
 try:
@@ -204,7 +226,92 @@ except Exception as exc:
 ventes_liste = tuple(float(v) for v in ventes)
 moyenne = float(ventes.mean())
 
-if page == "Comparer les politiques":
+
+if page == "Method Note & Guide":
+    st.title("Welcome to Maison Delorme")
+    st.caption("STOCK INTELLIGENCE · USER GUIDE")
+    st.markdown(
+        "Learn how to use the inventory simulator "
+        "in six simple steps."
+    )
+
+    st.info(
+        "Objective: Compare two inventory policies to improve "
+        "product availability while limiting inventory levels."
+    )
+
+    steps = [
+        (
+            "1. Select a product",
+            "Choose a product from the sidebar. "
+            "The simulator loads its inventory information "
+            "and 24 months of synthetic demand."
+        ),
+        (
+            "2. Explore the data",
+            "Use Dashboard to view stock and average demand, "
+            "Demand Analysis to explore trends, and Catalogue "
+            "to understand ABC classification."
+        ),
+        (
+            "3. Set the parameters",
+            "Open Compare Inventory Policies. Adjust the service "
+            "target, supplier lead time, initial stock, "
+            "order quantity (Q), review period (R) "
+            "and target stock (S)."
+        ),
+        (
+            "4. Compare inventory policies",
+            "Reorder Point (ROP): Order Q bottles when inventory "
+            "reaches the reorder threshold.\n\n"
+            "Periodic Review: Every R weeks, order enough "
+            "to reach target S."
+        ),
+        (
+            "5. Interpret the results",
+            "Compare fill rate, lost sales, average inventory, "
+            "inventory value and number of orders.\n\n"
+            "The recommendation prioritizes policies meeting "
+            "the service target, then lower inventory value."
+        ),
+        (
+            "6. Test different scenarios",
+            "Try changing the target service level from "
+            "95% to 80%. Observe how safety stock and "
+            "simulation results change."
+        ),
+    ]
+
+    st.markdown("### Getting started")
+
+    for title, description in steps:
+        with st.expander(title):
+            st.write(description)
+
+    st.markdown("### Key assumptions")
+    st.caption(
+        "Demand is distributed evenly across weeks. "
+        "Supplier lead times are fixed, unmet demand "
+        "is counted as lost sales, and data is synthetic. "
+        "Ordering and holding costs are excluded."
+    )
+
+    st.divider()
+
+    if st.button(
+        "Start Simulation",
+        type="primary",
+        use_container_width=True
+    ):
+        st.session_state.page_active = "Comparer les politiques"
+        st.rerun()
+
+    st.caption(
+        "Excel Data → Product Selection → Parameters → "
+        "Policy Comparison → KPI Results → Recommendation"
+    )
+
+elif page == "Comparer les politiques":
     st.title("Comparaison des politiques de stock")
     st.caption(f"{reference} · {nom} · Simulation sur 24 mois de demande synthétique")
     st.markdown(badge_abc(p["ABC"]), unsafe_allow_html=True)
