@@ -185,7 +185,7 @@ PAGES = [
 ]
 
 if "page_active" not in st.session_state:
-    st.session_state.page_active = "Method Note & Guide"
+    st.session_state.page_active = "Comparer les politiques"
 
 with st.sidebar:
     st.markdown("## 🥃 Maison Delorme")
@@ -204,6 +204,10 @@ with st.sidebar:
         produits["SKU"].dropna().tolist()
     )
     st.caption("VERSION 1.2 · IDENTITÉ ABC")
+    if st.button("▶ Replay guided tour", use_container_width=True, key="replay_tour"):
+        st.session_state.tour_open = True
+        st.session_state.tour_step = 0
+        st.rerun()
 
 try:
     p = produits.loc[produits["SKU"] == reference].iloc[0]
@@ -227,210 +231,173 @@ ventes_liste = tuple(float(v) for v in ventes)
 moyenne = float(ventes.mean())
 
 
-if page == "Method Note & Guide":
-    # Independent learning space: never changes the operational simulator.
-    st.markdown("""
-    <style>
-    .guide-hero{background:linear-gradient(115deg,#142338,#263f5c);color:white;
-      padding:28px 32px;border-radius:18px;margin-bottom:18px}
-    .guide-hero h1{color:white!important;margin:5px 0 10px;font-size:2.1rem}
-    .guide-hero p{color:#dce5ef;margin:0;line-height:1.6}
-    .guide-eyebrow{color:#e5bd7e;letter-spacing:2px;font-size:12px;font-weight:700}
-    .guide-card{background:white;border:1px solid #e5eaf0;border-radius:14px;
-      padding:18px 20px;margin:8px 0 14px}
-    .guide-card h4{margin:0 0 7px;color:#142338}
-    .guide-card p{margin:0;color:#526176;line-height:1.6}
-    .guide-flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0 20px}
-    .guide-pill{background:#e9eef4;border-radius:10px;padding:10px 14px;
-      color:#142338;font-weight:600;font-size:13px}
-    .guide-arrow{color:#be9252;font-weight:700}
-    </style>
-    <div class="guide-hero">
-      <div class="guide-eyebrow">MAISON DELORME · STOCK INTELLIGENCE</div>
-      <h1>Learn the simulator, step by step.</h1>
-      <p>Six short interactive lessons. Discover how inventory decisions work,
-      explore real product data and launch your own comparison.</p>
-    </div>
-    """, unsafe_allow_html=True)
+# The tour is a visual walkthrough only. It never writes simulator parameters.
+if "tour_open" not in st.session_state:
+    st.session_state.tour_open = True  # Automatically shown once per new session.
+if "tour_step" not in st.session_state:
+    st.session_state.tour_step = 0
 
-    guide_names = ["01 · Choose a product", "02 · Explore the data",
-                   "03 · Set the parameters", "04 · Compare the policies",
-                   "05 · Read the KPIs", "06 · Try a scenario"]
-    if "guide_step" not in st.session_state:
-        st.session_state.guide_step = 0
-    guide_step = st.radio("LEARNING PATH", list(range(6)),
-                          format_func=lambda i: guide_names[i],
-                          horizontal=True, key="guide_step")
-    st.progress((guide_step + 1) / 6, text=f"Lesson {guide_step + 1} of 6")
+TOUR_TITLES = [
+    "Welcome to Stock Intelligence",
+    "1 · Choose a product",
+    "2 · Explore the data",
+    "3 · Configure the simulation",
+    "4 · Understand the two policies",
+    "5 · Read the results",
+    "6 · Try another scenario",
+]
 
-    if guide_step == 0:
-        st.subheader("Choose a product")
-        st.write("Start with a product in the left sidebar. Every product has its own demand, stock and supplier settings.")
-        a, b, c = st.columns(3)
-        a.metric("Selected product", reference)
-        b.metric("Initial stock", f"{fmt(stock)} bottles")
-        c.metric("Supplier lead time", f"{delai} weeks")
-        st.markdown(f"""<div class="guide-card"><h4>{nom}</h4>
-          <p>Unit cost: <b>{cout:,.2f} USD</b> · Order quantity: <b>{q_ref} bottles</b><br>
-          Historical demand: <b>24 months</b> · ABC class: <b>{p['ABC']}</b></p></div>""",
-          unsafe_allow_html=True)
-        st.info("Try selecting another product in the sidebar: these values will change immediately. The Excel data stays unchanged.")
 
-    elif guide_step == 1:
-        st.subheader("Explore demand and ABC classification")
-        st.write("The simulator uses 24 months of synthetic demand for 20 products. Demand is not the same every month.")
-        demand_chart = go.Figure(go.Bar(
-            x=list(range(1, 25)), y=list(ventes_liste),
-            marker_color=GOLD, name="Monthly demand"))
-        demand_chart.add_hline(y=moyenne, line_dash="dash", line_color=NAVY,
-                               annotation_text="Monthly average")
-        demand_chart.update_layout(height=290, xaxis_title="Month", yaxis_title="Bottles",
-                                   margin=dict(l=10, r=10, t=20, b=10),
-                                   paper_bgcolor="white", plot_bgcolor="white")
-        st.plotly_chart(demand_chart, use_container_width=True)
-        st.markdown("**ABC = total demand over 24 months × unit cost.** Higher-value products receive priority.")
-        abc_counts = produits["ABC"].value_counts()
-        abc_chart = go.Figure(go.Bar(
-            x=["A", "B", "C"], y=[int(abc_counts.get(x, 0)) for x in "ABC"],
-            marker_color=["#176B43", "#C39A37", "#D48446"],
-            text=[int(abc_counts.get(x, 0)) for x in "ABC"], textposition="auto"))
-        abc_chart.update_layout(height=230, yaxis_title="Number of products",
-                                margin=dict(l=10, r=10, t=10, b=10),
-                                paper_bgcolor="white", plot_bgcolor="white")
-        st.plotly_chart(abc_chart, use_container_width=True)
-        st.caption("The ABC groups are based on cumulative consumption value (approximately 80% / 15% / 5%), not on the number of products.")
+def tour_panel(content):
+    st.markdown(
+        '<div style="background:#fff;border:1px solid #e3e8ef;border-radius:14px;'
+        'padding:20px;margin:12px 0;color:#142338">' + content + '</div>',
+        unsafe_allow_html=True,
+    )
 
-    elif guide_step == 2:
-        st.subheader("Understand the reorder point")
-        st.write("Experiment with a small example to see why demand and supplier lead time matter.")
-        st.caption("EDUCATIONAL EXAMPLE — independent of the real simulation")
-        a, b, c = st.columns(3)
-        with a:
-            demo_demand = st.slider("Weekly demand · bottles", 5, 50, 20, 5, key="gdemand")
-        with b:
-            demo_lead = st.slider("Lead time · weeks", 1, 5, 2, key="glead")
-        with c:
-            demo_buffer = st.slider("Safety buffer · bottles", 0, 50, 15, 5, key="gbuffer")
-        demo_expected = demo_demand * demo_lead
-        demo_rop = demo_expected + demo_buffer
-        x, y, zcol = st.columns(3)
-        x.metric("Expected demand during lead time", f"{demo_expected} bt")
-        y.metric("Safety buffer", f"{demo_buffer} bt")
-        zcol.metric("Illustrative reorder point", f"{demo_rop} bt")
-        fig_demo = go.Figure(go.Bar(
-            x=["Expected demand", "Safety buffer"],
-            y=[demo_expected, demo_buffer],
-            marker_color=[NAVY, GOLD],
-            text=[demo_expected, demo_buffer], textposition="auto"))
-        fig_demo.update_layout(height=260, yaxis_title="Bottles", margin=dict(l=10,r=10,t=10,b=10),
-                               paper_bgcolor="white", plot_bgcolor="white")
-        st.plotly_chart(fig_demo, use_container_width=True)
-        st.success(f"Reorder point = {demo_expected} + {demo_buffer} = {demo_rop} bottles. A higher demand or longer lead time raises the threshold.")
-        with st.expander("How does the actual application calculate safety stock?"):
-            st.markdown("**Safety stock = z × weekly demand standard deviation × √lead time**")
-            st.write("The coefficient z depends on the theoretical service target. The real application calculates the buffer from the selected product's weekly demand variability; it is not the manually chosen buffer above.")
-            st.write("For Periodic Review, the protection period is **lead time + review period (L + R)**.")
 
-    elif guide_step == 3:
-        st.subheader("Two ways to replenish stock")
-        st.write("Both policies serve the same demand, but they decide **when to order** differently.")
-        left, right = st.columns(2)
-        with left:
-            st.markdown("""<div class="guide-card"><h4>ROP · Reorder Point</h4>
-            <p>Check stock each week.<br>When inventory position reaches the threshold,
-            place an order for a fixed quantity <b>Q</b>.</p></div>""", unsafe_allow_html=True)
-        with right:
-            st.markdown("""<div class="guide-card"><h4>Periodic Review · (R, S)</h4>
-            <p>Check inventory every <b>R</b> weeks.<br>At each review, order enough
-            to bring inventory position up to target <b>S</b>.</p></div>""", unsafe_allow_html=True)
-        st.markdown("**See the difference over 8 illustrative weeks**")
-        demo_week = st.slider("Advance the example to week", 1, 8, 4, key="gweek")
-        weeks = list(range(1, 9))
-        rop_levels = [85, 68, 51, 34, 79, 62, 45, 90]
-        periodic_levels = [85, 68, 51, 89, 72, 55, 38, 83]
-        fig_policies = go.Figure()
-        fig_policies.add_trace(go.Scatter(x=weeks[:demo_week], y=rop_levels[:demo_week],
-                            mode="lines+markers", name="ROP example", line=dict(color=NAVY, width=3)))
-        fig_policies.add_trace(go.Scatter(x=weeks[:demo_week], y=periodic_levels[:demo_week],
-                            mode="lines+markers", name="Periodic example", line=dict(color=GOLD, width=3)))
-        fig_policies.update_layout(height=320, xaxis_title="Week", yaxis_title="Illustrative stock level (bottles)",
-                                   xaxis=dict(range=[1, 8], dtick=1), yaxis=dict(range=[0, 110]),
-                                   margin=dict(l=10,r=10,t=10,b=10), paper_bgcolor="white", plot_bgcolor="white")
-        st.plotly_chart(fig_policies, use_container_width=True)
-        st.caption("Conceptual illustration only: the curves are fixed teaching examples, not the output of the simulation engine. Order arrivals are simplified.")
-        st.info("ROP responds to a stock threshold. Periodic Review responds to a scheduled review date.")
+def tour_close():
+    st.session_state.tour_open = False
 
-    elif guide_step == 4:
-        st.subheader("Learn to read the results")
-        st.write("The comparison table tells you whether customer demand is served and how much inventory each policy requires.")
-        kpi_choices = {
-            "Fill rate": ("98%", "Out of 100 bottles requested, 98 are delivered. Higher is better."),
-            "Lost sales": ("2 bottles", "Demand that cannot be fulfilled is lost, not delivered later. Lower is better."),
-            "Average inventory": ("60 bottles", "The typical number of bottles held during the simulation. Lower reduces stock tied up."),
-            "Average inventory value": ("1,200 USD", "Average inventory multiplied by the product's unit cost. Lower means less capital tied up."),
-            "Number of orders": ("12 orders", "How many replenishment orders were placed. Fewer is not always better if service suffers."),
-            "Weeks with stockouts": ("3 weeks", "Weeks when customer demand exceeded available stock. Lower is better."),
-        }
-        selected_kpi = st.selectbox("Choose a KPI to understand", list(kpi_choices), key="gkpi")
-        kpi_example, kpi_explain = kpi_choices[selected_kpi]
-        st.metric(f"Illustrative {selected_kpi.lower()}", kpi_example)
-        st.info(kpi_explain)
-        st.markdown("**How the recommendation works**")
-        st.markdown("""<div class="guide-flow">
-          <span class="guide-pill">1 · Meet the service target</span>
-          <span class="guide-arrow">→</span>
-          <span class="guide-pill">2 · Minimize inventory value</span>
-          <span class="guide-arrow">→</span>
-          <span class="guide-pill">3 · Tie-break: fewer orders</span>
-        </div>""", unsafe_allow_html=True)
-        st.warning("If neither policy meets the target, the application does not recommend a winner. The theoretical service target and the realized fill rate are different measures.")
+
+@st.dialog("Maison Delorme · Guided Tour", width="large", on_dismiss=tour_close)
+def show_guided_tour():
+    step = st.session_state.tour_step
+    st.progress(step / 6)
+    st.caption(f"STEP {step + 1} OF 7 · INTERACTIVE VISUAL WALKTHROUGH")
+    st.subheader(TOUR_TITLES[step])
+
+    if step == 0:
+        st.write("Discover the simulator in under three minutes. The screens below are **visual demonstrations**: you do not need to change any settings.")
+        tour_panel(
+            '<div style="font-size:13px;color:#BE9252;letter-spacing:2px">MAISON DELORME</div>'
+            '<div style="font-size:26px;font-weight:750;margin:9px 0">STOCK INTELLIGENCE</div>'
+            '<div style="color:#64748b">Excel data → Product → Parameters → ROP vs Periodic Review → KPIs</div>'
+        )
+        st.info("Goal: reach the desired service level with the lowest average inventory value.")
+
+    elif step == 1:
+        st.write("**Look at the sidebar.** This is where you choose the SKU to study. All pages then use the selected product.")
+        tour_panel(
+            '<div style="background:#142338;border-radius:10px;padding:17px;color:white">'
+            '<div style="font-weight:700;margin-bottom:12px">🥃 Maison Delorme</div>'
+            '<div style="font-size:12px;opacity:.8">Navigation</div>'
+            '<div style="padding:8px">◉ Comparer les politiques</div>'
+            '<div style="padding:8px">○ Tableau de bord</div>'
+            '<div style="padding:8px">○ Analyse de la demande</div>'
+            '<div style="padding:8px">○ Catalogue</div>'
+            '<div style="border:2px solid #e5b66b;border-radius:8px;padding:12px;margin-top:12px">'
+            '➜ Référence produit &nbsp; <b>' + str(reference) + '</b></div></div>'
+        )
+        st.caption(f"Current example: {reference} · {nom}. This is a preview, not a clickable selector.")
+
+    elif step == 2:
+        st.write("**Explore the three data pages** before comparing stock policies. The chart uses the 24 monthly values for your selected SKU.")
+        tab1, tab2, tab3 = st.tabs(["Dashboard", "Demand Analysis", "ABC Catalogue"])
+        with tab1:
+            x, y = st.columns(2)
+            x.metric("Initial stock", f"{stock:,} bottles")
+            y.metric("Monthly average demand", f"{moyenne:,.0f} bottles")
+            st.caption("Open « Tableau de bord » in the sidebar to find these indicators.")
+        with tab2:
+            chart = go.Figure(go.Bar(x=list(range(1, 25)), y=list(ventes_liste), marker_color=GOLD))
+            chart.update_layout(height=230, margin=dict(l=8,r=8,t=8,b=8), xaxis_title="Month", yaxis_title="Bottles", paper_bgcolor="white", plot_bgcolor="white")
+            st.plotly_chart(chart, use_container_width=True, key="tour_demand_chart")
+            st.caption("Open « Analyse de la demande » to see the full historical demand chart.")
+        with tab3:
+            a,b,c=st.columns(3)
+            for col, cl in zip((a,b,c),("A","B","C")):
+                col.metric(f"Class {cl}", int((produits["ABC"] == cl).sum()))
+            st.caption(f"Selected SKU belongs to class {p['ABC']}. ABC is based on 24-month consumption value (quantity × unit cost).")
+
+    elif step == 3:
+        st.write("**These are the fields you will see in « Paramètres de simulation ».** The highlighted values below are examples only.")
+        tour_panel(
+            '<div style="font-weight:700;font-size:18px;margin-bottom:12px">▾ Paramètres de simulation</div>'
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+            '<div style="border:2px solid #BE9252;border-radius:8px;padding:10px">Service cible théorique<br><b>95 %</b></div>'
+            '<div style="border:1px solid #dbe2eb;border-radius:8px;padding:10px">Délai fournisseur L<br><b>2 semaines</b></div>'
+            '<div style="border:1px solid #dbe2eb;border-radius:8px;padding:10px">Stock initial<br><b>500 bouteilles</b></div>'
+            '<div style="border:1px solid #dbe2eb;border-radius:8px;padding:10px">Quantité fixe ROP · Q<br><b>200 bouteilles</b></div>'
+            '<div style="border:1px solid #dbe2eb;border-radius:8px;padding:10px">Période de revue · R<br><b>4 semaines</b></div>'
+            '<div style="border:1px solid #dbe2eb;border-radius:8px;padding:10px">Stock cible · S<br><b>Calculated, editable</b></div>'
+            '</div>'
+        )
+        st.info("The service target is used to size safety stock. It is **not** the same metric as the realized fill rate.")
+
+    elif step == 4:
+        st.write("**Watch how the two replenishment rules differ.** This is an illustrative diagram, not the operational simulation.")
+        mode = st.segmented_control("Visualize policy", ["ROP", "Periodic Review"], default="ROP", key="tour_policy")
+        weeks=list(range(1,13))
+        if mode == "ROP":
+            values=[180,150,120,90,60,160,130,100,70,170,140,110]
+            threshold=75
+            explanation="ROP: when inventory position reaches the reorder point, a fixed order of Q bottles is placed. Delivery occurs after lead time."
+        else:
+            values=[180,150,120,90,190,160,130,100,200,170,140,110]
+            threshold=100
+            explanation="Periodic Review: every R weeks, an order raises inventory position toward target S. Delivery occurs after lead time."
+        fig=go.Figure()
+        fig.add_trace(go.Scatter(x=weeks,y=values,mode="lines+markers",name="Illustrative stock",line=dict(color=NAVY,width=3)))
+        fig.add_hline(y=threshold,line_dash="dash",line_color=GOLD,annotation_text="Reference level")
+        fig.update_layout(height=280,margin=dict(l=5,r=5,t=15,b=10),xaxis_title="Week",yaxis_title="Illustrative bottles",paper_bgcolor="white",plot_bgcolor="white")
+        st.plotly_chart(fig,use_container_width=True,key="tour_policy_chart")
+        st.info(explanation)
+        st.caption("In the actual model, ordering is based on inventory position (including outstanding orders), not just the stock line shown here.")
+
+    elif step == 5:
+        st.write("**Here is how to read « Résultats comparés ».** The numbers below are illustrative, not calculated outputs.")
+        example = pd.DataFrame({
+            "Indicator": ["Realized fill rate", "Lost sales", "Average inventory", "Average inventory value", "Number of orders"],
+            "ROP": ["96 %", "40", "180", "3,600 USD", "12"],
+            "Periodic Review": ["93 %", "70", "150", "3,000 USD", "8"],
+        })
+        st.dataframe(example,hide_index=True,use_container_width=True)
+        st.success("Example target = 95%: ROP qualifies; Periodic Review does not. ROP is therefore recommended even though it holds more inventory.")
+        st.caption("Real recommendation rule: meet the realized service target first, then minimize average stock value; break ties using number of orders.")
 
     else:
-        st.subheader("Ready for a real scenario?")
-        st.write("Now use the actual simulator. The parameters below are suggestions for a first experiment.")
-        st.markdown("""<div class="guide-card"><h4>Your first experiment</h4>
-          <p><b>1.</b> Open Compare Inventory Policies.<br>
-          <b>2.</b> Set theoretical service target to <b>95%</b>.<br>
-          <b>3.</b> Observe safety stock, fill rate and average inventory value.<br>
-          <b>4.</b> Reduce the target to <b>80%</b>.<br>
-          <b>5.</b> Compare both policies again. Restore 95% if needed.</p></div>""",
-          unsafe_allow_html=True)
-        st.info("The results are recalculated by the real simulation engine. The guide's examples never change the operational data.")
-        if st.button("Start Simulation", type="primary", use_container_width=True, key="guide_start"):
-            st.session_state.page_active = "Comparer les politiques"
-            st.rerun()
+        st.write("**Try the scenario comparison in the real simulator.** You will change only one control: « Service cible théorique (%) ».")
+        demo_target=st.segmented_control("Preview service target",["95 %","80 %"],default="95 %",key="tour_target")
+        st.metric("Selected theoretical target",demo_target)
+        st.markdown("**What to observe:**")
+        st.write("1. The calculated safety stock and reorder point may change.\n2. ROP and Periodic Review results may change.\n3. The recommended policy may change or neither may meet the realized target.")
+        st.caption("No live simulator parameter has been modified. Demand variability, lead time and other inputs also influence the outcome.")
+        st.info("Assumptions: synthetic data; monthly demand spread uniformly over weeks; fixed lead times; unmet demand is lost; ordering and holding costs are not modeled.")
 
     st.divider()
-    with st.expander("Methodology & limitations · Read before interpreting results"):
-        st.markdown("""
-        **Data:** 20 products and 24 months of synthetic demand from Excel. ABC classes use
-        24-month demand multiplied by unit cost, ranked by cumulative value.
-
-        **Simulation:** Monthly demand is distributed uniformly into weekly demand.
-        Supplier lead times are fixed, and unmet demand is counted as lost sales.
-        Orders arrive after the selected lead time.
-
-        **Stock parameters:** The application estimates safety stock with a normal-distribution
-        coefficient, weekly demand variability and lead time. ROP covers expected demand during
-        lead time plus safety stock. Periodic Review covers lead time plus review interval.
-
-        **Important distinction:** The selected service target is a theoretical sizing input;
-        realized fill rate is the share of actual demand fulfilled. They are not interchangeable.
-
-        **Limitations:** Synthetic data, simplified weekly demand, fixed lead times, and no
-        ordering or holding costs. This is an educational decision-support prototype.
-        """)
-    nav_left, nav_right = st.columns(2)
-    with nav_left:
-        if st.button("← Previous lesson", disabled=guide_step == 0,
-                     use_container_width=True, key="guide_prev"):
-            st.session_state.guide_step -= 1
+    left, middle, right = st.columns([1,1,1.3])
+    with left:
+        if st.button("← Previous",disabled=step==0,use_container_width=True,key="tour_back"):
+            st.session_state.tour_step -= 1
             st.rerun()
-    with nav_right:
-        if st.button("Next lesson →", disabled=guide_step == 5,
-                     use_container_width=True, key="guide_next"):
-            st.session_state.guide_step += 1
+    with middle:
+        if st.button("Skip tutorial",use_container_width=True,key="tour_skip"):
+            tour_close()
             st.rerun()
+    with right:
+        label="Finish & start simulation" if step==6 else "Next →"
+        if st.button(label,type="primary",use_container_width=True,key="tour_forward"):
+            if step==6:
+                tour_close()
+                st.session_state.page_active="Comparer les politiques"
+            else:
+                st.session_state.tour_step += 1
+            st.rerun()
+
+
+if st.session_state.tour_open:
+    show_guided_tour()
+
+if page == "Method Note & Guide":
+    st.title("Method Note & Guide")
+    st.write("A visual, step-by-step tour of Maison Delorme Stock Intelligence.")
+    st.info("The tutorial demonstrates the interface without changing your simulator settings.")
+    if st.button("▶ Open guided tour",type="primary",use_container_width=True):
+        st.session_state.tour_step=0
+        st.session_state.tour_open=True
+        st.rerun()
+    st.caption("You can replay this tutorial anytime using the sidebar button.")
 
 elif page == "Comparer les politiques":
     st.title("Comparaison des politiques de stock")
