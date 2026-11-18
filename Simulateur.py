@@ -114,7 +114,7 @@ def optimiser_rop(demandes, stock, q_ref, delai, cout, cible):
 
 
 dossier = Path(__file__).resolve().parent
-fichier = dossier / "Base de donnée.xlsx"
+fichier = dossier / "base_donnees.xlsx"
 
 if not fichier.exists():
     st.error("Fichier Excel introuvable.")
