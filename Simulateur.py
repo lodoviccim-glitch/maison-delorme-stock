@@ -113,9 +113,13 @@ def optimiser_rop(demandes, stock, q_ref, delai, cout, cible):
     return meilleur, total, admissibles, service_max
 
 
-fichier = Path(__file__).resolve().parent / "Base de donnée.xlsx"
+dossier = Path(__file__).resolve().parent
+fichier = dossier / "Base de donnée.xlsx"
+
 if not fichier.exists():
-    st.error("Le fichier « Base de donnée.xlsx » doit se trouver à côté de simulateur.py.")
+    st.error("Fichier Excel introuvable.")
+    st.write("Dossier de l'application :", str(dossier))
+    st.write("Fichiers présents :", [p.name for p in dossier.iterdir()])
     st.stop()
 
 try:
