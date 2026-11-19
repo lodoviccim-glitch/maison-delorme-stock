@@ -89,6 +89,37 @@ p {line-height:1.6}
 .md-note {border:1px solid #E3EAF2;background:#FFFFFF;border-radius:14px;padding:14px 18px;color:#64748B;font-size:.85rem;margin:10px 0 20px}
 .md-step {display:inline-block;background:#F2E7D7;color:#79562D;border-radius:999px;font-size:.7rem;padding:5px 10px;font-weight:800;letter-spacing:.04em}
 @media(max-width:900px){.block-container{padding:1.2rem .85rem 3rem!important}.md-hero{padding:23px 21px}.md-hero h1{font-size:1.5rem!important}}
+
+/* APP SHELL 2.0 — top navigation, no sidebar, product-led interface */
+[data-testid="stSidebar"], [data-testid="collapsedControl"], [data-testid="stSidebarCollapsedControl"] {display:none!important}
+[data-testid="stAppViewContainer"] > .main {margin-left:0!important}
+[data-testid="stHeader"] {background:transparent!important}
+.block-container {max-width:1580px!important;padding:1.05rem 3.4rem 5rem!important}
+.md-topbrand {display:flex;align-items:center;gap:13px;min-height:68px;padding:4px 0 13px;border-bottom:1px solid #E6EBF2;margin-bottom:13px}
+.md-brandmark {width:48px;height:48px;border-radius:15px;background:#162940;color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;letter-spacing:-.08em;box-shadow:0 8px 18px #16294023}
+.md-brandmark span {color:#D8B479;font-size:11px;margin:0 3px}
+.md-brandtext {display:flex;flex-direction:column;gap:3px}
+.md-brandtext strong {font-family:Manrope,sans-serif;font-size:14px;color:#162940;letter-spacing:.085em;font-weight:800}
+.md-brandtext small {font-size:10px;color:#8794A6;letter-spacing:.14em;font-weight:800}
+.md-brandtext small b {color:#C8A46E}
+.md-live {margin-left:auto;font-size:10px;font-weight:800;letter-spacing:.11em;color:#5D6D82;display:flex;align-items:center;gap:8px}
+.md-live i,.md-context-dot {display:inline-block;width:8px;height:8px;background:#29A47A;border-radius:50%;box-shadow:0 0 0 4px #29A47A15}
+.md-live span {background:#EEE7DD;color:#87683D;padding:7px 10px;border-radius:7px;margin-left:10px}
+div[class*="st-key-nav_"] button {background:transparent!important;color:#6D7A8B!important;border:1px solid transparent!important;border-radius:10px!important;min-height:44px!important;padding:8px 4px!important;box-shadow:none!important;font-size:12px!important;font-weight:750!important;white-space:nowrap!important}
+div[class*="st-key-nav_"] button:hover {background:#E9EDF3!important;color:#162940!important}
+div[class*="st-key-nav_"] button p {font-size:12px!important;white-space:nowrap!important}
+.md-context {height:38px;display:flex;align-items:center;gap:11px;font-size:11px;font-weight:750;letter-spacing:.08em;color:#8391A3}
+.md-context strong {font-size:13px;letter-spacing:0;color:#1B3049;font-weight:800}
+.md-context-chevron {font-size:18px;color:#C4CFDB;font-weight:400}
+.md-shell-divider {height:1px;background:#E4EAF2;margin:8px 0 27px}
+.st-key-replay_tour button {min-height:39px!important;border-radius:10px!important;background:#fff!important;border:1px solid #DFE6EE!important;color:#34465C!important;font-size:12px!important;font-weight:750!important}
+.st-key-active_sku [data-baseweb="select"] > div {background:#fff!important;border:1px solid #DDE5EF!important;min-height:39px!important}
+.st-key-active_sku [data-baseweb="select"] {box-shadow:0 2px 8px #12233807}
+.md-hero {background:linear-gradient(112deg,#13263C 0%,#203A54 78%,#31465C 100%);border-radius:19px;padding:31px 38px;margin:0 0 25px}
+[data-testid="stMetric"] {border-radius:14px!important;box-shadow:0 8px 26px #182D4408!important}
+[data-testid="stPlotlyChart"] {border-radius:14px!important;box-shadow:0 8px 26px #182D4408!important}
+[data-testid="stVerticalBlock"] > div {min-width:0}
+@media(max-width:1100px){.block-container{padding:1rem 1.1rem 3rem!important}.md-live{display:none}div[class*="st-key-nav_"] button p{font-size:10px!important;white-space:normal!important}div[class*="st-key-nav_"] button{min-height:50px!important}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -244,27 +275,46 @@ PAGES = [
 if "page_active" not in st.session_state:
     st.session_state.page_active = "Tableau de bord"
 
-with st.sidebar:
-    st.markdown("## ◈ Maison Delorme")
-    st.caption("STOCK INTELLIGENCE  /  WORKSPACE")
-    st.divider()
+# Top application shell — navigation without a permanent sidebar.
+# Navigation is kept in session_state so the existing page logic remains intact.
+NAV_ITEMS = [
+    ("Tableau de bord", "Overview", "overview"),
+    ("Automatic Replenishment", "Order Planner", "planner"),
+    ("Comparer les politiques", "Policy Lab", "policies"),
+    ("Analyse de la demande", "Demand Insights", "demand"),
+    ("Catalogue", "Product Library", "products"),
+    ("Import Database", "Data Hub", "data"),
+    ("Method Note & Guide", "Help Center", "help"),
+]
 
-    page = st.radio(
-        "Navigation",
-        PAGES,
-        key="page_active"
-    )
+st.markdown('''<div class="md-topbrand"><div class="md-brandmark">M<span>✦</span>D</div><div class="md-brandtext"><strong>MAISON DELORME</strong><small>STOCK INTELLIGENCE <b>·</b> CONTROL PLATFORM</small></div><div class="md-live"><i></i> DECISION WORKSPACE <span>VFINAL</span></div></div>''', unsafe_allow_html=True)
 
-    st.divider()
-    reference = st.selectbox(
-        "Référence produit",
-        produits["SKU"].dropna().tolist()
-    )
-    st.caption("VFINAL PILOT · DECISION ENGINE")
-    if st.button("▶ Replay guided tour", use_container_width=True, key="replay_tour"):
+nav_cols = st.columns([1.0, 1.18, 0.95, 1.15, 1.12, 0.78, 0.92], gap="small")
+for col, (destination, label, slug) in zip(nav_cols, NAV_ITEMS):
+    with col:
+        if st.button(label, key=f"nav_{slug}", use_container_width=True):
+            st.session_state.page_active = destination
+            st.rerun()
+
+page = st.session_state.page_active
+active_slug = next((slug for dest, _, slug in NAV_ITEMS if dest == page), "overview")
+st.markdown(f'''<style>
+.st-key-nav_{active_slug} button {{background:#182C44!important;color:#fff!important;border-color:#182C44!important;box-shadow:0 5px 14px #1B2C441C!important}}
+.st-key-nav_{active_slug} button p {{color:#fff!important}}
+</style>''', unsafe_allow_html=True)
+
+left, middle, right = st.columns([1.55, 1.0, 0.65], vertical_alignment="bottom", gap="medium")
+with left:
+    st.markdown(f'''<div class="md-context"><span class="md-context-dot"></span><span>WORKSPACE</span><span class="md-context-chevron">/</span><strong>{page}</strong></div>''', unsafe_allow_html=True)
+with middle:
+    reference = st.selectbox("Active product", produits["SKU"].dropna().tolist(), key="active_sku", label_visibility="collapsed")
+with right:
+    if st.button("◉  Guided tour", use_container_width=True, key="replay_tour"):
         st.session_state.tour_open = True
         st.session_state.tour_step = 0
         st.rerun()
+
+st.markdown('<div class="md-shell-divider"></div>', unsafe_allow_html=True)
 
 try:
     p = produits.loc[produits["SKU"] == reference].iloc[0]
