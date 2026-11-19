@@ -33,6 +33,80 @@ st.set_page_config(page_title="Maison Delorme | Stock Intelligence", page_icon="
 NAVY, GOLD = "#142338", "#BE9252"
 
 st.markdown("""
+
+/* ===== SIDEBAR — PROFESSIONAL NAVIGATION ===== */
+
+/* Navigation spacing */
+[data-testid="stSidebar"] [role="radiogroup"] {
+    gap: 6px;
+}
+
+/* Each navigation item */
+[data-testid="stSidebar"] [role="radiogroup"] label {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    padding: 11px 14px;
+    transition: background 0.2s ease, border-color 0.2s ease;
+    cursor: pointer;
+}
+
+/* Hover */
+[data-testid="stSidebar"] [role="radiogroup"] label:hover {
+    background: #25364C;
+    border-color: #354A62;
+}
+
+/* Hide radio circles */
+[data-testid="stSidebar"] [role="radiogroup"] label
+[data-testid="stWidgetLabel"] {
+    margin: 0;
+}
+
+[data-testid="stSidebar"] [role="radiogroup"] label
+[data-baseweb="radio"] > div:first-child {
+    display: none;
+}
+
+/* Active item */
+[data-testid="stSidebar"] [role="radiogroup"]
+label:has(input:checked) {
+    background: #BE9252;
+    border-color: #BE9252;
+    box-shadow: 0 3px 12px rgba(190,146,82,0.18);
+}
+
+/* Active text */
+[data-testid="stSidebar"] [role="radiogroup"]
+label:has(input:checked) p {
+    color: #142338 !important;
+    font-weight: 700 !important;
+}
+
+/* Navigation text */
+[data-testid="stSidebar"] [role="radiogroup"] p {
+    font-size: 0.94rem;
+    font-weight: 500;
+}
+
+/* Dividers */
+[data-testid="stSidebar"] hr {
+    border-color: #35455A;
+    margin: 18px 0;
+}
+
+/* Product selector */
+[data-testid="stSidebar"] [data-baseweb="select"] > div {
+    border-radius: 10px !important;
+    border: 1px solid #DCE3EC !important;
+}
+
+/* Sidebar buttons */
+[data-testid="stSidebar"] button {
+    border-radius: 10px;
+    font-weight: 600;
+}
+
 <style>
 .stApp {background:#F5F7FA}
 .block-container {max-width:1250px;padding-top:2rem}
