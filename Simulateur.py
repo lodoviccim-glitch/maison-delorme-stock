@@ -34,22 +34,77 @@ NAVY, GOLD = "#142338", "#BE9252"
 
 st.markdown("""
 <style>
-.stApp {background:#F5F7FA}
-.block-container {max-width:1250px;padding-top:2rem}
-[data-testid="stSidebar"] {background:#142338}
-[data-testid="stSidebar"] * {color:#F5F7FA}
-[data-testid="stSidebar"] [data-baseweb="select"] *,
-[data-testid="stSidebar"] [data-baseweb="input"] *,
-[data-testid="stSidebar"] input {color:#18283C!important;-webkit-text-fill-color:#18283C!important}
-[data-testid="stSidebar"] [data-baseweb="select"] > div {background:white!important}
-[role="option"] *,[role="listbox"] * {color:#18283C!important}
-h1,h2,h3 {color:#142338}
-[data-testid="stMetric"] {background:white;border:1px solid #E6EAF0;border-radius:12px;padding:16px}
-[data-testid="stMetricLabel"] {color:#6B7788}
-[data-testid="stMetricValue"] {color:#142338}
-[data-testid="stPlotlyChart"] {background:white;border:1px solid #E6EAF0;border-radius:12px;padding:8px}
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap');
+:root {--ink:#15243A;--muted:#748398;--line:#E7ECF3;--gold:#B58B51;--navy:#111F32;--bg:#F5F7FB}
+html, body, [class*="css"], .stApp {font-family:'DM Sans',sans-serif!important}
+.stApp, [data-testid="stAppViewContainer"] {background:#F5F7FB!important}
+.block-container {max-width:1440px!important;padding:2rem 3.2rem 5rem!important}
+h1,h2,h3,h4 {font-family:'Manrope',sans-serif!important;color:#142338!important;letter-spacing:-.035em!important}
+h1 {font-size:2.05rem!important;font-weight:800!important;margin-bottom:.25rem!important}
+h2 {font-size:1.45rem!important;font-weight:800!important}
+h3 {font-size:1.14rem!important;font-weight:800!important}
+p {line-height:1.6}
+[data-testid="stSidebar"] {background:#111F32!important;border-right:1px solid #283A50!important}
+[data-testid="stSidebar"] > div {background:#111F32!important}
+[data-testid="stSidebar"] .block-container {padding:1.8rem 1.05rem!important}
+[data-testid="stSidebar"] h2 {color:#FFF!important;font-size:1.35rem!important;letter-spacing:-.03em!important}
+[data-testid="stSidebar"] p,[data-testid="stSidebar"] label,[data-testid="stSidebar"] span {color:#CBD5E3}
+[data-testid="stSidebar"] [data-testid="stCaptionContainer"] p {color:#899AB0!important;font-size:.72rem!important;letter-spacing:.075em}
+[data-testid="stSidebar"] hr {border-color:#314257!important;margin:1.1rem 0!important}
+[data-testid="stSidebar"] [role="radiogroup"] {gap:.3rem!important}
+[data-testid="stSidebar"] [role="radiogroup"] label {border:1px solid transparent!important;border-radius:11px!important;padding:11px 12px!important;transition:background .18s ease,border-color .18s ease!important;cursor:pointer!important}
+[data-testid="stSidebar"] [role="radiogroup"] label:hover {background:#21344A!important}
+[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) {background:#B58B51!important;border-color:#C6A36F!important;box-shadow:0 6px 18px #00000022!important}
+[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) p {color:#101E30!important;font-weight:800!important}
+[data-testid="stSidebar"] [role="radiogroup"] label [data-baseweb="radio"] {width:0!important;min-width:0!important;overflow:hidden!important;opacity:0!important;margin:0!important;padding:0!important}
+[data-testid="stSidebar"] [role="radiogroup"] label p {font-weight:600!important;font-size:.87rem!important}
+[data-testid="stSidebar"] [data-baseweb="select"] > div {background:#FFFFFF!important;border:1px solid #D7DFE8!important;border-radius:10px!important;min-height:44px}
+[data-testid="stSidebar"] [data-baseweb="select"] * {color:#17283E!important;-webkit-text-fill-color:#17283E!important}
+[role="option"] *,[role="listbox"] * {color:#17283E!important}
+[data-testid="stSidebar"] button {background:#22364D!important;border:1px solid #3B526D!important;color:#E8EDF5!important;border-radius:10px!important;min-height:42px;font-weight:700!important}
+[data-testid="stSidebar"] button:hover {border-color:#B58B51!important;background:#2D435B!important}
+[data-testid="stSidebar"] button * {color:#E8EDF5!important}
+[data-testid="stMetric"] {background:white!important;border:1px solid #E6ECF3!important;border-radius:16px!important;padding:18px 20px!important;box-shadow:0 3px 14px #1B314509!important}
+[data-testid="stMetricLabel"] p {color:#718197!important;font-size:.78rem!important;font-weight:700!important}
+[data-testid="stMetricValue"] {color:#17263C!important;font-family:'Manrope',sans-serif!important;font-weight:800!important;letter-spacing:-.035em!important}
+[data-testid="stPlotlyChart"] {background:white!important;border:1px solid #E7ECF3!important;border-radius:17px!important;padding:12px!important;box-shadow:0 4px 18px #1B314507!important}
+[data-testid="stDataFrame"] {border:1px solid #E4EAF2;border-radius:14px!important;overflow:hidden}
+[data-testid="stExpander"] {background:#FFF!important;border:1px solid #E5EBF2!important;border-radius:14px!important;overflow:hidden!important}
+[data-testid="stExpander"] summary {font-weight:700!important;color:#21334A!important}
+[data-testid="stAlert"] {border-radius:13px!important}
+.stButton>button[kind="primary"], .stDownloadButton>button[kind="primary"] {background:#B58B51!important;color:#111F32!important;border:1px solid #B58B51!important;font-weight:800!important;border-radius:11px!important;min-height:46px!important}
+.stButton>button[kind="primary"]:hover {background:#CAA56D!important;border-color:#CAA56D!important}
+.stButton>button, .stDownloadButton>button {border-radius:11px!important;font-weight:700!important}
+[data-baseweb="tab-list"] {background:#EBEFF5!important;padding:5px!important;border-radius:12px!important;gap:4px!important}
+[data-baseweb="tab"] {border-radius:9px!important;font-weight:700!important}
+[data-baseweb="tab"][aria-selected="true"] {background:white!important;box-shadow:0 2px 7px #17263C15!important}
+[data-baseweb="input"] > div,[data-baseweb="select"] > div {border-radius:10px!important}
+.md-hero {background:linear-gradient(115deg,#15253B 0%,#1F3750 65%,#29405A 100%);border-radius:21px;padding:30px 34px;margin:0 0 22px;position:relative;overflow:hidden;box-shadow:0 12px 32px #14233815}
+.md-hero:after {content:"";position:absolute;width:230px;height:230px;border:1px solid #FFFFFF18;border-radius:50%;right:-70px;top:-110px;box-shadow:0 0 0 45px #FFFFFF06,0 0 0 95px #FFFFFF04;pointer-events:none}
+.md-hero .eyebrow {color:#E4BD7D!important;letter-spacing:.18em;font-size:.69rem;font-weight:800;text-transform:uppercase;margin:0 0 9px}
+.md-hero h1 {color:#FFF!important;font-size:2.0rem!important;margin:0 0 8px!important}
+.md-hero .sub {color:#CBD7E5!important;font-size:.91rem;max-width:900px;margin:0}
+.md-section {display:flex;align-items:center;gap:10px;margin:26px 0 12px;color:#142338;font-size:1.06rem;font-weight:800}
+.md-section:before {content:"";height:19px;width:4px;background:#B58B51;border-radius:8px}
+.md-note {border:1px solid #E3EAF2;background:#FFFFFF;border-radius:14px;padding:14px 18px;color:#64748B;font-size:.85rem;margin:10px 0 20px}
+.md-step {display:inline-block;background:#F2E7D7;color:#79562D;border-radius:999px;font-size:.7rem;padding:5px 10px;font-weight:800;letter-spacing:.04em}
+@media(max-width:900px){.block-container{padding:1.2rem .85rem 3rem!important}.md-hero{padding:23px 21px}.md-hero h1{font-size:1.5rem!important}}
 </style>
 """, unsafe_allow_html=True)
+
+
+def hero(title, subtitle, eyebrow="MAISON DELORME / STOCK INTELLIGENCE"):
+    import html
+    st.markdown(
+        f'<div class="md-hero"><div class="eyebrow">{html.escape(eyebrow)}</div>'
+        f'<h1>{html.escape(title)}</h1><p class="sub">{html.escape(subtitle)}</p></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def section(title):
+    import html
+    st.markdown(f'<div class="md-section">{html.escape(title)}</div>', unsafe_allow_html=True)
 
 
 def fmt(value):
@@ -183,14 +238,15 @@ PAGES = [
     "Analyse de la demande",
     "Catalogue",
     "Automatic Replenishment",
+    "Import Database",
 ]
 
 if "page_active" not in st.session_state:
-    st.session_state.page_active = "Comparer les politiques"
+    st.session_state.page_active = "Tableau de bord"
 
 with st.sidebar:
-    st.markdown("## 🥃 Maison Delorme")
-    st.caption("STOCK INTELLIGENCE")
+    st.markdown("## ◈ Maison Delorme")
+    st.caption("STOCK INTELLIGENCE  /  WORKSPACE")
     st.divider()
 
     page = st.radio(
@@ -204,7 +260,7 @@ with st.sidebar:
         "Référence produit",
         produits["SKU"].dropna().tolist()
     )
-    st.caption("VERSION 1.2 · IDENTITÉ ABC")
+    st.caption("VFINAL PILOT · DECISION ENGINE")
     if st.button("▶ Replay guided tour", use_container_width=True, key="replay_tour"):
         st.session_state.tour_open = True
         st.session_state.tour_step = 0
@@ -391,7 +447,7 @@ if st.session_state.tour_open:
     show_guided_tour()
 
 if page == "Method Note & Guide":
-    st.title("Method Note & Guide")
+    hero("Guided experience", "Discover every feature through a visual, interactive product tour.", "HELP CENTER / ONBOARDING")
     st.write("A visual, step-by-step tour of Maison Delorme Stock Intelligence.")
     st.info("The tutorial demonstrates the interface without changing your simulator settings.")
     if st.button("▶ Open guided tour",type="primary",use_container_width=True):
@@ -401,10 +457,11 @@ if page == "Method Note & Guide":
     st.caption("You can replay this tutorial anytime using the sidebar button.")
 
 elif page == "Comparer les politiques":
-    st.title("Comparaison des politiques de stock")
+    hero("Inventory policy lab", "Compare reorder point and periodic review policies on the same demand history.", "SIMULATION / POLICY COMPARISON")
     st.caption(f"{reference} · {nom} · Simulation sur 24 mois de demande synthétique")
     st.markdown(badge_abc(p["ABC"]), unsafe_allow_html=True)
 
+    section("01 · Simulation parameters")
     with st.expander("Paramètres de simulation", expanded=True):
         c1, c2, c3 = st.columns(3)
         with c1:
@@ -449,7 +506,7 @@ elif page == "Comparer les politiques":
         delai_semaines=int(delai_test), cout_unitaire=cout
     )
 
-    st.markdown("### Résultats comparés")
+    section("02 · Policy performance")
     tableau = pd.DataFrame([
         {"Indicateur": "Service réalisé (fill rate)", "ROP": f'{rop_kpi["Taux de service (%)"]:.1f} %', "Periodic Review": f'{pr_kpi["Taux de service (%)"]:.1f} %'},
         {"Indicateur": "Demande non satisfaite (bouteilles)", "ROP": fmt(rop_kpi["Demande non satisfaite"]), "Periodic Review": fmt(pr_kpi["Demande non satisfaite"])},
@@ -472,7 +529,7 @@ elif page == "Comparer les politiques":
         if float(indicateurs["Taux de service (%)"]) + 1e-9 >= cible
     ]
 
-    st.markdown("### Recommandation")
+    section("03 · Recommendation")
     if not eligibles:
         st.warning(
             f"Aucune politique n'atteint {cible} % de service. "
@@ -566,7 +623,7 @@ elif page == "Comparer les politiques":
             st.dataframe(pr_hist, hide_index=True, use_container_width=True)
 
 elif page == "Tableau de bord":
-    st.title("Tableau de bord")
+    hero("Command center", "Your inventory portfolio, demand signals and selected product at a glance.", "OVERVIEW / INVENTORY INTELLIGENCE")
     st.caption(f"{reference} · {nom}")
     st.markdown(badge_abc(p["ABC"]), unsafe_allow_html=True)
     c1, c2, c3 = st.columns(3)
@@ -576,12 +633,45 @@ elif page == "Tableau de bord":
         st.metric("Demande moyenne mensuelle", fmt(moyenne))
     with c3:
         st.metric("Couverture initiale", f"{stock / moyenne:.1f} mois" if moyenne > 0 else "—")
-    st.info("La page Comparer les politiques permet de tester ROP et Periodic Review sur le même historique.")
+    section("Portfolio snapshot")
+    k1,k2,k3,k4=st.columns(4)
+    k1.metric("Active products",len(produits))
+    k2.metric("Class A products",int((produits["ABC"]=="A").sum()))
+    k3.metric("24-month demand",fmt(produits["Volume 24 mois"].sum())+" bt")
+    k4.metric("Consumption value",euro(produits["Valeur 24 mois (USD)"].sum()))
+    section("Demand trend & ABC distribution")
+    left,right=st.columns([1.65,1])
+    with left:
+        hist_dash=pd.DataFrame({"Month":pd.date_range("2024-10-01",periods=24,freq="MS"),"Demand":ventes_liste})
+        fig_dash=go.Figure(go.Scatter(x=hist_dash["Month"],y=hist_dash["Demand"],mode="lines+markers",line=dict(color=NAVY,width=3),marker=dict(color=GOLD,size=6),fill="tozeroy",fillcolor="rgba(181,139,81,0.10)"))
+        fig_dash.update_layout(height=315,margin=dict(l=12,r=12,t=25,b=10),paper_bgcolor="white",plot_bgcolor="white",xaxis_title="Month",yaxis_title="Bottles",showlegend=False)
+        st.plotly_chart(fig_dash,use_container_width=True)
+    with right:
+        counts=produits["ABC"].value_counts().reindex(["A","B","C"],fill_value=0)
+        fig_abc=go.Figure(go.Pie(labels=counts.index,values=counts.values,hole=.67,marker=dict(colors=["#2C7A59","#B58B51","#D38C65"]),textinfo="label+percent",sort=False))
+        fig_abc.update_layout(height=315,margin=dict(l=10,r=10,t=22,b=10),paper_bgcolor="white",showlegend=False,annotations=[dict(text=f"{len(produits)} SKUs",x=.5,y=.5,font_size=17,showarrow=False)])
+        st.plotly_chart(fig_abc,use_container_width=True)
+    section("Quick actions")
+    ac1,ac2,ac3=st.columns(3)
+    with ac1:
+        if st.button("Compare stock policies  →",use_container_width=True,key="dash_compare"):
+            st.session_state.page_active="Comparer les politiques"
+            st.rerun()
+    with ac2:
+        if st.button("Generate purchase proposals  →",use_container_width=True,key="dash_auto"):
+            st.session_state.page_active="Automatic Replenishment"
+            st.rerun()
+    with ac3:
+        if st.button("Explore demand history  →",use_container_width=True,key="dash_demand"):
+            st.session_state.page_active="Analyse de la demande"
+            st.rerun()
+    st.caption("Synthetic historical dataset. Planning recommendations are not live purchase orders.")
 
 elif page == "Analyse de la demande":
-    st.title("Analyse de la demande")
+    hero("Demand intelligence", "Explore historical consumption and detect changes in demand.", "ANALYTICS / DEMAND")
     st.caption(f"{reference} · {nom}")
     st.markdown(badge_abc(p["ABC"]), unsafe_allow_html=True)
+    section("Historical monthly demand")
     hist = pd.DataFrame({"Mois": pd.date_range("2024-10-01", periods=24, freq="MS"), "Demande": ventes_liste})
     fig = go.Figure(go.Bar(x=hist["Mois"], y=hist["Demande"], marker_color=GOLD))
     fig.update_layout(height=380, margin=dict(l=10, r=10, t=20, b=10), paper_bgcolor="white", plot_bgcolor="white", xaxis_title="Mois", yaxis_title="Bouteilles")
@@ -591,7 +681,8 @@ elif page == "Analyse de la demande":
         st.dataframe(hist, hide_index=True, use_container_width=True)
 
 elif page == "Catalogue":
-    st.title("Catalogue produits")
+    hero("Product catalogue", "Explore the complete product portfolio, segmentation and inventory value.", "MASTER DATA / ABC ANALYSIS")
+    section("Portfolio segmentation")
     c1, c2, c3 = st.columns(3)
     for colonne, classe in zip((c1, c2, c3), ("A", "B", "C")):
         groupe = produits.loc[produits["ABC"] == classe]
@@ -628,12 +719,9 @@ elif page == "Automatic Replenishment":
     from datetime import date
     from policy_optimizer import compare_and_plan
 
-    st.title("Automatic Replenishment")
+    hero("Replenishment cockpit", "Forecast demand, evaluate both inventory policies and generate purchase proposals.", "DECISION ENGINE / AUTOMATED PLANNING")
     st.caption("DEMAND FORECAST → ROP VS PERIODIC REVIEW → POLICY SELECTION → PURCHASE PROPOSALS")
-    st.info(
-        "The engine forecasts demand, tests both inventory policies for each SKU, "
-        "selects a policy and proposes dated orders. **No orders are sent.**"
-    )
+    st.markdown('<div class="md-note"><b>HOW IT WORKS</b> &nbsp; 01 Forecast demand &nbsp; → &nbsp; 02 Optimize ROP / Periodic Review &nbsp; → &nbsp; 03 Select policy &nbsp; → &nbsp; 04 Propose orders. &nbsp; <b>No orders are sent.</b></div>',unsafe_allow_html=True)
     with st.expander("Method and limitations — read before using"):
         st.write(
             "The 24-month demand history ends in September 2026. Quantity_On_Hand "
@@ -650,6 +738,7 @@ elif page == "Automatic Replenishment":
             "Holding, ordering and stockout costs use simplified assumptions. "
             "All proposals require human verification."
         )
+    section("01 · Planning configuration")
     a,b,c=st.columns(3)
     with a:
         planning_date=st.date_input(
@@ -659,7 +748,7 @@ elif page == "Automatic Replenishment":
         horizon=st.slider("Planning horizon (weeks)",4,24,12)
     with c:
         target=st.slider("Target fill rate (%)",80,99,95)
-    st.subheader("Economic assumptions")
+    section("02 · Economic assumptions")
     st.caption("Illustrative values only. Replace them with validated company costs before operational use.")
     ec1,ec2,ec3=st.columns(3)
     with ec1:
@@ -685,6 +774,7 @@ elif page == "Automatic Replenishment":
         comparison,decisions,orders=result
         if st.session_state.get("policy_optimization_params")!=params:
             st.warning("Settings changed. Generate again to refresh the results.")
+        section("03 · Decision summary")
         m1,m2,m3,m4=st.columns(4)
         m1.metric("Products",len(decisions))
         m2.metric("ROP selected",int((decisions["Selected policy"]=="ROP").sum()))
@@ -695,12 +785,12 @@ elif page == "Automatic Replenishment":
         st.metric("Total modeled cost — selected policies (USD)",f"{decisions['Total modeled cost (USD)'].sum():,.2f}")
         if (~decisions["Meets target"]).any():
             st.warning("Some products have no policy meeting the target. Their proposals are marked REVIEW REQUIRED, not validated decisions.")
-        st.subheader("1 · Compare the two policies")
+        section("04 · Policy evaluation")
         sku=st.selectbox("Product to inspect",decisions["SKU"].tolist(),key="auto_sku")
         st.dataframe(comparison.loc[comparison["SKU"]==sku],hide_index=True,use_container_width=True)
-        st.subheader("2 · Automatic decision for every product")
+        section("05 · Selected policies by SKU")
         st.dataframe(decisions,hide_index=True,use_container_width=True)
-        st.subheader("3 · Purchase order proposals")
+        section("06 · Proposed purchase orders")
         if orders.empty:
             st.success("No purchase orders proposed for this scenario.")
         else:
@@ -717,3 +807,22 @@ elif page == "Automatic Replenishment":
             "Validate the current stock snapshot, existing inbound orders and supplier "
             "constraints before operational use."
         )
+
+
+elif page == "Import Database":
+    hero("Database manager", "Prepare a replacement Excel dataset and review its structure before future activation.", "DATA MANAGEMENT / PREVIEW")
+    st.markdown('<div class="md-note"><b>Preview feature.</b> Uploads are inspected locally in this session. The live simulator continues to use its existing Excel dataset.</div>',unsafe_allow_html=True)
+    section("Upload an Excel workbook")
+    uploaded=st.file_uploader("Choose a workbook (.xlsx)",type=["xlsx"],key="db_preview_upload")
+    if uploaded is not None:
+        try:
+            book=pd.ExcelFile(uploaded)
+            st.success(f"Workbook received: {uploaded.name}")
+            st.write("Sheets detected:",", ".join(book.sheet_names))
+            selected_sheet=st.selectbox("Preview sheet",book.sheet_names,key="db_preview_sheet")
+            preview=pd.read_excel(book,sheet_name=selected_sheet,nrows=12)
+            st.dataframe(preview,hide_index=True,use_container_width=True)
+            st.caption("Preview only — no validation or replacement is performed.")
+        except Exception as exc:
+            st.error(f"Unable to preview workbook: {exc}")
+    st.button("Apply new database — available in final integration",disabled=True,use_container_width=True)
