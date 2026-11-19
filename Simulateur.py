@@ -29,7 +29,7 @@ def couleur_cellule_abc(valeur):
     return f"background-color: {fond}; color: {texte}; font-weight: bold; text-align: center"
 
 
-st.set_page_config(page_title="Maison Delorme | Stock Intelligence", page_icon="🥃", layout="wide")
+st.set_page_config(page_title="Maison Delorme | Stock Intelligence", layout="wide")
 NAVY, GOLD = "#142338", "#BE9252"
 
 st.markdown("""
