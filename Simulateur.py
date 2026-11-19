@@ -182,6 +182,8 @@ PAGES = [
     "Tableau de bord",
     "Analyse de la demande",
     "Catalogue",
+    "Import Database",
+
 ]
 
 if "page_active" not in st.session_state:
@@ -589,7 +591,7 @@ elif page == "Analyse de la demande":
     with st.expander("Données mensuelles"):
         st.dataframe(hist, hide_index=True, use_container_width=True)
 
-else:
+elif page == "Catalogue":
     st.title("Catalogue produits")
     c1, c2, c3 = st.columns(3)
     for colonne, classe in zip((c1, c2, c3), ("A", "B", "C")):
@@ -622,3 +624,42 @@ else:
     with st.expander("Méthode ABC et données complètes"):
         st.caption("ABC calculé sur les 24 mois : demande totale × coût unitaire (USD). Produits classés par valeur décroissante ; A jusqu'au franchissement de 80 % de valeur cumulée, B jusqu'à 95 %, C au-delà. La classe ne change pas avec les paramètres de simulation.")
         st.dataframe(tableau, hide_index=True, use_container_width=True)
+
+elif page == "Import Database":
+    st.title("Import Database")
+    st.caption("DATABASE MANAGEMENT · FUTURE FEATURE")
+
+    st.markdown("### Update your inventory database")
+
+    st.write(
+        "Upload a new Excel database to update product information, "
+        "demand history and inventory parameters."
+    )
+
+    uploaded_file = st.file_uploader(
+        "Select an Excel file",
+        type=["xlsx"],
+        help="Excel files only (.xlsx)"
+    )
+
+    if uploaded_file is not None:
+        st.success(f"File selected: {uploaded_file.name}")
+
+        st.info(
+            "File validation and database replacement "
+            "will be available in the final version."
+        )
+
+    st.divider()
+
+    st.button(
+        "Apply New Database",
+        type="primary",
+        disabled=True,
+        use_container_width=True
+    )
+
+    st.caption(
+        "Coming in V1: automatic validation, database replacement "
+        "and synchronization with the inventory simulator."
+    )
