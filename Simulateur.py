@@ -642,11 +642,13 @@ elif page == "Automatic Replenishment":
             "are selected by historical one-step MAE. Both policies are tested "
             "against the same deterministic forecast demand. ROP uses a fixed Q "
             "and reorder threshold; Periodic Review uses R and order-up-to S. "
-            "The optimizer searches a limited parameter grid, prioritizes meeting "
-            "the fill-rate target, then lower average stock. Results are scenario "
+            "The optimizer searches a limited parameter grid, requires the forecast "
+            "fill-rate target where feasible, then minimizes modeled logistics cost. "
+            "Economic costs are editable assumptions, not verified supplier data. Results are scenario "
             "estimates, not guarantees or a global optimum. Existing purchase orders, "
-            "MOQs, pack sizes, variable lead times and ordering/holding costs are "
-            "not modeled. All proposals require human verification."
+            "MOQs, pack sizes and variable lead times are not modeled. "
+            "Holding, ordering and stockout costs use simplified assumptions. "
+            "All proposals require human verification."
         )
     a,b,c=st.columns(3)
     with a:
@@ -657,13 +659,23 @@ elif page == "Automatic Replenishment":
         horizon=st.slider("Planning horizon (weeks)",4,24,12)
     with c:
         target=st.slider("Target fill rate (%)",80,99,95)
-    params=(planning_date,horizon,target)
+    st.subheader("Economic assumptions")
+    st.caption("Illustrative values only. Replace them with validated company costs before operational use.")
+    ec1,ec2,ec3=st.columns(3)
+    with ec1:
+        order_cost=st.number_input("Cost per order (USD)",min_value=0.0,value=25.0,step=5.0,help="Fixed administrative/transport ordering cost per purchase order; excludes purchase value.")
+    with ec2:
+        holding_rate=st.number_input("Annual holding rate (%)",min_value=0.0,max_value=100.0,value=20.0,step=1.0,help="Annual carrying cost as a percentage of inventory acquisition value; prorated to the planning horizon.")
+    with ec3:
+        shortage_cost=st.number_input("Lost-sale penalty (USD/bottle)",min_value=0.0,value=10.0,step=1.0,help="Scenario cost for each bottle of unfulfilled forecast demand; excludes purchase value.")
+    params=(planning_date,horizon,target,order_cost,holding_rate,shortage_cost)
     if st.button("Forecast, Compare & Generate Orders",type="primary",use_container_width=True):
         try:
             with st.spinner("Evaluating both policies across all products..."):
                 comparison,decisions,orders=compare_and_plan(
                     produits,demande,as_of=planning_date,weeks=horizon,
-                    service_target=target/100)
+                    service_target=target/100,order_cost=order_cost,
+                    annual_holding_rate=holding_rate/100,stockout_cost=shortage_cost)
             st.session_state["policy_optimization_result"]=(comparison,decisions,orders)
             st.session_state["policy_optimization_params"]=params
         except Exception as exc:
@@ -678,6 +690,11 @@ elif page == "Automatic Replenishment":
         m2.metric("ROP selected",int((decisions["Selected policy"]=="ROP").sum()))
         m3.metric("Periodic Review selected",int((decisions["Selected policy"]=="Periodic Review").sum()))
         m4.metric("Below service target",int((~decisions["Meets target"]).sum()))
+        st.subheader("Modeled logistics cost")
+        st.caption("Cost = average stock × unit cost × annual holding rate × horizon days / 365 + number of orders × order cost + lost bottles × penalty. Purchase expenditure is shown separately and is not included in this comparison.")
+        st.metric("Total modeled cost — selected policies (USD)",f"{decisions['Total modeled cost (USD)'].sum():,.2f}")
+        if (~decisions["Meets target"]).any():
+            st.warning("Some products have no policy meeting the target. Their proposals are marked REVIEW REQUIRED, not validated decisions.")
         st.subheader("1 · Compare the two policies")
         sku=st.selectbox("Product to inspect",decisions["SKU"].tolist(),key="auto_sku")
         st.dataframe(comparison.loc[comparison["SKU"]==sku],hide_index=True,use_container_width=True)
@@ -688,6 +705,8 @@ elif page == "Automatic Replenishment":
             st.success("No purchase orders proposed for this scenario.")
         else:
             st.dataframe(orders,hide_index=True,use_container_width=True)
+            if (orders["Status"] != "PROPOSAL - NOT SENT").any():
+                st.warning("Export includes proposals requiring review. Do not transmit without validating service level, stock snapshot and supplier constraints.")
             st.download_button(
                 "Download proposed orders (CSV)",
                 orders.to_csv(index=False).encode("utf-8-sig"),
