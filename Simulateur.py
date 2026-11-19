@@ -626,67 +626,75 @@ elif page == "Catalogue":
 
 elif page == "Automatic Replenishment":
     from datetime import date
-    from replenishment_engine import generate_plan
+    from policy_optimizer import compare_and_plan
 
     st.title("Automatic Replenishment")
-    st.caption("FORECASTING · INVENTORY PLANNING · PURCHASE ORDER PROPOSALS")
+    st.caption("DEMAND FORECAST → ROP VS PERIODIC REVIEW → POLICY SELECTION → PURCHASE PROPOSALS")
     st.info(
-        "The engine calculates what to order, when, and how much for all 20 SKUs. "
-        "These are **draft recommendations**, not supplier orders."
+        "The engine forecasts demand, tests both inventory policies for each SKU, "
+        "selects a policy and proposes dated orders. **No orders are sent.**"
     )
-    with st.expander("Planning assumptions — read before generating", expanded=False):
+    with st.expander("Method and limitations — read before using"):
         st.write(
-            "The demand history ends in September 2026. The source's Quantity_On_Hand "
-            "is treated as a snapshot on October 1, 2026. Select October 1 for the "
-            "most consistent scenario; later dates are hypothetical unless stock "
-            "is refreshed. Existing inbound purchase orders, supplier MOQs, case "
-            "packs, budgets and holding/ordering costs are not supplied and are "
-            "not considered. Lead times are fixed and forecast uncertainty is "
-            "estimated from historical backtest errors."
+            "The 24-month demand history ends in September 2026. Quantity_On_Hand "
+            "is assumed to be a stock snapshot on October 1, 2026; planning on later "
+            "dates is hypothetical unless the stock is refreshed. Forecast models "
+            "are selected by historical one-step MAE. Both policies are tested "
+            "against the same deterministic forecast demand. ROP uses a fixed Q "
+            "and reorder threshold; Periodic Review uses R and order-up-to S. "
+            "The optimizer searches a limited parameter grid, prioritizes meeting "
+            "the fill-rate target, then lower average stock. Results are scenario "
+            "estimates, not guarantees or a global optimum. Existing purchase orders, "
+            "MOQs, pack sizes, variable lead times and ordering/holding costs are "
+            "not modeled. All proposals require human verification."
         )
     a,b,c=st.columns(3)
     with a:
         planning_date=st.date_input(
-            "Planning start date (historical snapshot)",
-            value=date(2026,10,1), min_value=date(2026,10,1),
-            max_value=date(2027,3,31), key="auto_plan_date")
+            "Planning start (historical snapshot)", value=date(2026,10,1),
+            min_value=date(2026,10,1),max_value=date(2027,3,31),key="auto_plan_date")
     with b:
-        horizon=st.slider("Planning horizon (weeks)",4,24,12,step=1)
+        horizon=st.slider("Planning horizon (weeks)",4,24,12)
     with c:
-        target=st.slider("Target service level (%)",80,99,95,step=1)
-    if st.button("Generate Replenishment Plan", type="primary", use_container_width=True):
+        target=st.slider("Target fill rate (%)",80,99,95)
+    params=(planning_date,horizon,target)
+    if st.button("Forecast, Compare & Generate Orders",type="primary",use_container_width=True):
         try:
-            overview,orders=generate_plan(
-                produits,demande,as_of=planning_date,weeks=horizon,
-                service_target=target/100)
-            st.session_state["replenishment_result"]=(overview,orders)
-            st.session_state["replenishment_params"]=(planning_date,horizon,target)
+            with st.spinner("Evaluating both policies across all products..."):
+                comparison,decisions,orders=compare_and_plan(
+                    produits,demande,as_of=planning_date,weeks=horizon,
+                    service_target=target/100)
+            st.session_state["policy_optimization_result"]=(comparison,decisions,orders)
+            st.session_state["policy_optimization_params"]=params
         except Exception as exc:
-            st.error(f"Unable to generate plan: {exc}")
-    result=st.session_state.get("replenishment_result")
+            st.error(f"Planning failed: {exc}")
+    result=st.session_state.get("policy_optimization_result")
     if result is not None:
-        overview,orders=result
-        params=st.session_state.get("replenishment_params")
-        if params!=(planning_date,horizon,target):
-            st.warning("Settings changed. Click Generate again to update the plan.")
-        m1,m2,m3=st.columns(3)
-        m1.metric("Products analysed",len(overview))
-        m2.metric("Suggested order lines",len(orders))
-        m3.metric("Estimated purchasing value",f"{orders['Purchase value (USD)'].sum():,.0f} USD" if not orders.empty else "0 USD")
-        st.subheader("Forecast and stockout risk by product")
-        st.dataframe(overview,hide_index=True,use_container_width=True)
-        st.subheader("Dated purchase order proposals")
+        comparison,decisions,orders=result
+        if st.session_state.get("policy_optimization_params")!=params:
+            st.warning("Settings changed. Generate again to refresh the results.")
+        m1,m2,m3,m4=st.columns(4)
+        m1.metric("Products",len(decisions))
+        m2.metric("ROP selected",int((decisions["Selected policy"]=="ROP").sum()))
+        m3.metric("Periodic Review selected",int((decisions["Selected policy"]=="Periodic Review").sum()))
+        m4.metric("Below service target",int((~decisions["Meets target"]).sum()))
+        st.subheader("1 · Compare the two policies")
+        sku=st.selectbox("Product to inspect",decisions["SKU"].tolist(),key="auto_sku")
+        st.dataframe(comparison.loc[comparison["SKU"]==sku],hide_index=True,use_container_width=True)
+        st.subheader("2 · Automatic decision for every product")
+        st.dataframe(decisions,hide_index=True,use_container_width=True)
+        st.subheader("3 · Purchase order proposals")
         if orders.empty:
-            st.success("No replenishment orders proposed for the selected scenario.")
+            st.success("No purchase orders proposed for this scenario.")
         else:
             st.dataframe(orders,hide_index=True,use_container_width=True)
             st.download_button(
                 "Download proposed orders (CSV)",
                 orders.to_csv(index=False).encode("utf-8-sig"),
-                file_name="maison_delorme_purchase_order_proposals.csv",
+                file_name="maison_delorme_auto_purchase_proposals.csv",
                 mime="text/csv",use_container_width=True)
         st.caption(
-            "IMPORTANT: No order is transmitted. Validate current inventory, "
-            "open orders, suppliers' minimum quantities and dates before execution. "
-            "Forecasts are estimates, not exact future demand."
+            "IMPORTANT: Forecast-based planning only. No supplier order is transmitted. "
+            "Validate the current stock snapshot, existing inbound orders and supplier "
+            "constraints before operational use."
         )
