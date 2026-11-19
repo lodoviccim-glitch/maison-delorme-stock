@@ -124,6 +124,34 @@ div[class*="st-key-nav_"] button p {font-size:12px!important;white-space:nowrap!
 """, unsafe_allow_html=True)
 
 
+st.markdown("""<style>
+/* V3: clean SaaS workspace — reduce decoration and preserve hierarchy */
+.stApp,[data-testid="stAppViewContainer"]{background:#F8FAFC!important}
+.block-container{max-width:1350px!important;padding:1.25rem 2.5rem 5rem!important}
+.md-hero{background:#fff!important;border:1px solid #E2E8F0!important;box-shadow:none!important;padding:24px 28px!important}
+.md-hero:after{display:none!important}
+.md-hero h1{color:#0F172A!important}
+.md-hero .sub{color:#64748B!important}
+.md-hero .eyebrow{color:#64748B!important}
+.md-section:before{background:#2563EB!important}
+.app-brand{display:flex;align-items:center;gap:12px;padding:8px 0 18px}
+.app-symbol{width:39px;height:39px;background:#0F172A;color:white;border-radius:11px;display:grid;place-items:center;font-size:12px;font-weight:800;letter-spacing:.04em}
+.app-brand strong{font-size:15px;color:#0F172A;display:block;font-weight:800;line-height:1.2}
+.app-brand small{display:block;font-size:11px;color:#64748B;margin-top:2px}
+.app-tag{margin-left:auto;font-size:10px;color:#64748B;letter-spacing:.08em;font-weight:700}
+.app-rule{height:1px;background:#E2E8F0;margin:13px 0 26px}
+.app-eyebrow{font-size:11px;letter-spacing:.11em;color:#64748B;font-weight:800;margin-bottom:6px}
+.app-gap{height:12px}
+[data-testid="stMetric"]{box-shadow:none!important;border-radius:12px!important;padding:15px 17px!important}
+[data-testid="stPlotlyChart"]{box-shadow:none!important;border-radius:12px!important}
+.stButton>button[kind="primary"]{background:#0F172A!important;color:#fff!important;border-color:#0F172A!important}
+.stButton>button[kind="primary"] p{color:#fff!important}
+.stButton>button[kind="primary"]:hover{background:#243B59!important;border-color:#243B59!important}
+[data-baseweb="tab-list"]{background:transparent!important;border-bottom:1px solid #E2E8F0!important;border-radius:0!important}
+[data-baseweb="tab"][aria-selected="true"]{box-shadow:none!important;border-bottom:2px solid #2563EB!important;border-radius:0!important}
+@media(max-width:900px){.block-container{padding:1rem!important}.app-tag{display:none}}
+</style>""",unsafe_allow_html=True)
+
 def hero(title, subtitle, eyebrow="MAISON DELORME / STOCK INTELLIGENCE"):
     import html
     st.markdown(
@@ -275,46 +303,40 @@ PAGES = [
 if "page_active" not in st.session_state:
     st.session_state.page_active = "Tableau de bord"
 
-# Top application shell — navigation without a permanent sidebar.
-# Navigation is kept in session_state so the existing page logic remains intact.
-NAV_ITEMS = [
-    ("Tableau de bord", "Overview", "overview"),
-    ("Automatic Replenishment", "Order Planner", "planner"),
-    ("Comparer les politiques", "Policy Lab", "policies"),
-    ("Analyse de la demande", "Demand Insights", "demand"),
-    ("Catalogue", "Product Library", "products"),
-    ("Import Database", "Data Hub", "data"),
-    ("Method Note & Guide", "Help Center", "help"),
+# Focused product navigation: three primary jobs; advanced tools are secondary.
+MAIN_NAV = [
+    ("Tableau de bord", "01  Overview", "home"),
+    ("Automatic Replenishment", "02  Purchase planning", "plan"),
+    ("Comparer les politiques", "03  Policy analysis", "lab"),
 ]
-
-st.markdown('''<div class="md-topbrand"><div class="md-brandmark">M<span>✦</span>D</div><div class="md-brandtext"><strong>MAISON DELORME</strong><small>STOCK INTELLIGENCE <b>·</b> CONTROL PLATFORM</small></div><div class="md-live"><i></i> DECISION WORKSPACE <span>VFINAL</span></div></div>''', unsafe_allow_html=True)
-
-nav_cols = st.columns([1.0, 1.18, 0.95, 1.15, 1.12, 0.78, 0.92], gap="small")
-for col, (destination, label, slug) in zip(nav_cols, NAV_ITEMS):
-    with col:
-        if st.button(label, key=f"nav_{slug}", use_container_width=True):
-            st.session_state.page_active = destination
+SECONDARY_NAV = [
+    ("Analyse de la demande", "Demand history"),
+    ("Catalogue", "Product catalogue"),
+    ("Import Database", "Data management"),
+    ("Method Note & Guide", "Method & help"),
+]
+st.markdown("""<div class="app-brand"><div class="app-symbol">MD</div><div><strong>Maison Delorme</strong><small>Inventory Intelligence</small></div><div class="app-tag">DEMO WORKSPACE · SYNTHETIC DATA</div></div>""", unsafe_allow_html=True)
+nav = st.columns([1.05,1.35,1.12,.78], gap="small")
+for c, (dest, title, slug) in zip(nav[:3], MAIN_NAV):
+    with c:
+        if st.button(title, key="main_"+slug, use_container_width=True, type="primary" if st.session_state.page_active==dest else "secondary"):
+            st.session_state.page_active=dest
             st.rerun()
-
-page = st.session_state.page_active
-active_slug = next((slug for dest, _, slug in NAV_ITEMS if dest == page), "overview")
-st.markdown(f'''<style>
-.st-key-nav_{active_slug} button {{background:#182C44!important;color:#fff!important;border-color:#182C44!important;box-shadow:0 5px 14px #1B2C441C!important}}
-.st-key-nav_{active_slug} button p {{color:#fff!important}}
-</style>''', unsafe_allow_html=True)
-
-left, middle, right = st.columns([1.55, 1.0, 0.65], vertical_alignment="bottom", gap="medium")
-with left:
-    st.markdown(f'''<div class="md-context"><span class="md-context-dot"></span><span>WORKSPACE</span><span class="md-context-chevron">/</span><strong>{page}</strong></div>''', unsafe_allow_html=True)
-with middle:
-    reference = st.selectbox("Active product", produits["SKU"].dropna().tolist(), key="active_sku", label_visibility="collapsed")
-with right:
-    if st.button("◉  Guided tour", use_container_width=True, key="replay_tour"):
-        st.session_state.tour_open = True
-        st.session_state.tour_step = 0
-        st.rerun()
-
-st.markdown('<div class="md-shell-divider"></div>', unsafe_allow_html=True)
+with nav[3]:
+    with st.popover("More tools  ▾", use_container_width=True):
+        for dest, title in SECONDARY_NAV:
+            if st.button(title, key="extra_"+dest, use_container_width=True):
+                st.session_state.page_active=dest
+                st.rerun()
+page=st.session_state.page_active
+st.markdown('<div class="app-rule"></div>',unsafe_allow_html=True)
+# Keep the product selector only on product-specific screens.
+if page in ("Comparer les politiques", "Analyse de la demande", "Catalogue"):
+    reference=st.selectbox("Product to analyse", produits["SKU"].dropna().tolist(), key="active_sku")
+else:
+    if "active_sku" not in st.session_state or st.session_state.active_sku not in produits["SKU"].tolist():
+        st.session_state.active_sku=produits["SKU"].dropna().iloc[0]
+    reference=st.session_state.active_sku
 
 try:
     p = produits.loc[produits["SKU"] == reference].iloc[0]
@@ -673,49 +695,48 @@ elif page == "Comparer les politiques":
             st.dataframe(pr_hist, hide_index=True, use_container_width=True)
 
 elif page == "Tableau de bord":
-    hero("Command center", "Your inventory portfolio, demand signals and selected product at a glance.", "OVERVIEW / INVENTORY INTELLIGENCE")
-    st.caption(f"{reference} · {nom}")
-    st.markdown(badge_abc(p["ABC"]), unsafe_allow_html=True)
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.metric("Stock initial", fmt(stock))
-    with c2:
-        st.metric("Demande moyenne mensuelle", fmt(moyenne))
-    with c3:
-        st.metric("Couverture initiale", f"{stock / moyenne:.1f} mois" if moyenne > 0 else "—")
-    section("Portfolio snapshot")
-    k1,k2,k3,k4=st.columns(4)
-    k1.metric("Active products",len(produits))
-    k2.metric("Class A products",int((produits["ABC"]=="A").sum()))
-    k3.metric("24-month demand",fmt(produits["Volume 24 mois"].sum())+" bt")
-    k4.metric("Consumption value",euro(produits["Valeur 24 mois (USD)"].sum()))
-    section("Demand trend & ABC distribution")
-    left,right=st.columns([1.65,1])
+    st.markdown('<div class="app-eyebrow">INVENTORY / HOME</div>',unsafe_allow_html=True)
+    st.title("Inventory overview")
+    st.caption("See the portfolio, identify priorities and move directly to purchasing decisions.")
+    x1,x2,x3,x4=st.columns(4)
+    x1.metric("Products monitored",len(produits))
+    x2.metric("High-value / class A",int((produits["ABC"]=="A").sum()))
+    x3.metric("Demand · last 24 months",fmt(produits["Volume 24 mois"].sum())+" bt")
+    x4.metric("Historical consumption value",euro(produits["Valeur 24 mois (USD)"].sum()))
+    st.markdown('<div class="app-gap"></div>',unsafe_allow_html=True)
+    left,right=st.columns([1.65,1],gap="large")
     with left:
-        hist_dash=pd.DataFrame({"Month":pd.date_range("2024-10-01",periods=24,freq="MS"),"Demand":ventes_liste})
-        fig_dash=go.Figure(go.Scatter(x=hist_dash["Month"],y=hist_dash["Demand"],mode="lines+markers",line=dict(color=NAVY,width=3),marker=dict(color=GOLD,size=6),fill="tozeroy",fillcolor="rgba(181,139,81,0.10)"))
-        fig_dash.update_layout(height=315,margin=dict(l=12,r=12,t=25,b=10),paper_bgcolor="white",plot_bgcolor="white",xaxis_title="Month",yaxis_title="Bottles",showlegend=False)
-        st.plotly_chart(fig_dash,use_container_width=True)
+        st.subheader("Demand over time")
+        # Portfolio demand, not a randomly selected product.
+        portfolio_months=pd.to_numeric(demande.iloc[:,3:27].stack(),errors="coerce")
+        month_totals=demande.iloc[:,3:27].apply(pd.to_numeric,errors="coerce").sum(axis=0).values
+        fig=go.Figure(go.Scatter(x=pd.date_range("2024-10-01",periods=24,freq="MS"),y=month_totals,mode="lines",line=dict(color="#2563EB",width=3),fill="tozeroy",fillcolor="rgba(37,99,235,.08)"))
+        fig.update_layout(height=305,margin=dict(l=12,r=12,t=12,b=12),paper_bgcolor="white",plot_bgcolor="white",showlegend=False,xaxis_title=None,yaxis_title="Bottles")
+        st.plotly_chart(fig,use_container_width=True)
     with right:
+        st.subheader("Product mix")
         counts=produits["ABC"].value_counts().reindex(["A","B","C"],fill_value=0)
-        fig_abc=go.Figure(go.Pie(labels=counts.index,values=counts.values,hole=.67,marker=dict(colors=["#2C7A59","#B58B51","#D38C65"]),textinfo="label+percent",sort=False))
-        fig_abc.update_layout(height=315,margin=dict(l=10,r=10,t=22,b=10),paper_bgcolor="white",showlegend=False,annotations=[dict(text=f"{len(produits)} SKUs",x=.5,y=.5,font_size=17,showarrow=False)])
-        st.plotly_chart(fig_abc,use_container_width=True)
-    section("Quick actions")
-    ac1,ac2,ac3=st.columns(3)
-    with ac1:
-        if st.button("Compare stock policies  →",use_container_width=True,key="dash_compare"):
-            st.session_state.page_active="Comparer les politiques"
-            st.rerun()
-    with ac2:
-        if st.button("Generate purchase proposals  →",use_container_width=True,key="dash_auto"):
-            st.session_state.page_active="Automatic Replenishment"
-            st.rerun()
-    with ac3:
-        if st.button("Explore demand history  →",use_container_width=True,key="dash_demand"):
-            st.session_state.page_active="Analyse de la demande"
-            st.rerun()
-    st.caption("Synthetic historical dataset. Planning recommendations are not live purchase orders.")
+        fig=go.Figure(go.Pie(labels=counts.index,values=counts.values,hole=.68,marker=dict(colors=["#2563EB","#8B9BB0","#CBD5E1"]),textinfo="label+value",sort=False))
+        fig.update_layout(height=305,margin=dict(l=8,r=8,t=8,b=8),paper_bgcolor="white",showlegend=False,annotations=[dict(text=f"{len(produits)} SKUs",x=.5,y=.5,font_size=16,showarrow=False)])
+        st.plotly_chart(fig,use_container_width=True)
+    st.subheader("What would you like to do?")
+    a,b,c=st.columns(3,gap="medium")
+    with a:
+        st.markdown("**Generate a purchase plan**")
+        st.caption("Recommended quantities, dates, costs and exceptions.")
+        if st.button("Open purchase planning →",key="go_plan",type="primary",use_container_width=True):
+            st.session_state.page_active="Automatic Replenishment";st.rerun()
+    with b:
+        st.markdown("**Understand a policy**")
+        st.caption("Compare reorder point and periodic review.")
+        if st.button("Open policy analysis →",key="go_lab",use_container_width=True):
+            st.session_state.page_active="Comparer les politiques";st.rerun()
+    with c:
+        st.markdown("**Explore the products**")
+        st.caption("Find SKUs, consumption and ABC classes.")
+        if st.button("Open product catalogue →",key="go_products",use_container_width=True):
+            st.session_state.page_active="Catalogue";st.rerun()
+    st.info("Demo dataset: historical stock and demand. No live stock feed and no orders transmitted.",icon="ℹ️")
 
 elif page == "Analyse de la demande":
     hero("Demand intelligence", "Explore historical consumption and detect changes in demand.", "ANALYTICS / DEMAND")
@@ -768,96 +789,70 @@ elif page == "Catalogue":
 elif page == "Automatic Replenishment":
     from datetime import date
     from policy_optimizer import compare_and_plan
-
-    hero("Replenishment cockpit", "Forecast demand, evaluate both inventory policies and generate purchase proposals.", "DECISION ENGINE / AUTOMATED PLANNING")
-    st.caption("DEMAND FORECAST → ROP VS PERIODIC REVIEW → POLICY SELECTION → PURCHASE PROPOSALS")
-    st.markdown('<div class="md-note"><b>HOW IT WORKS</b> &nbsp; 01 Forecast demand &nbsp; → &nbsp; 02 Optimize ROP / Periodic Review &nbsp; → &nbsp; 03 Select policy &nbsp; → &nbsp; 04 Propose orders. &nbsp; <b>No orders are sent.</b></div>',unsafe_allow_html=True)
-    with st.expander("Method and limitations — read before using"):
-        st.write(
-            "The 24-month demand history ends in September 2026. Quantity_On_Hand "
-            "is assumed to be a stock snapshot on October 1, 2026; planning on later "
-            "dates is hypothetical unless the stock is refreshed. Forecast models "
-            "are selected by historical one-step MAE. Both policies are tested "
-            "against the same deterministic forecast demand. ROP uses a fixed Q "
-            "and reorder threshold; Periodic Review uses R and order-up-to S. "
-            "The optimizer searches a limited parameter grid, requires the forecast "
-            "fill-rate target where feasible, then minimizes modeled logistics cost. "
-            "Economic costs are editable assumptions, not verified supplier data. Results are scenario "
-            "estimates, not guarantees or a global optimum. Existing purchase orders, "
-            "MOQs, pack sizes and variable lead times are not modeled. "
-            "Holding, ordering and stockout costs use simplified assumptions. "
-            "All proposals require human verification."
-        )
-    section("01 · Planning configuration")
-    a,b,c=st.columns(3)
-    with a:
-        planning_date=st.date_input(
-            "Planning start (historical snapshot)", value=date(2026,10,1),
-            min_value=date(2026,10,1),max_value=date(2027,3,31),key="auto_plan_date")
-    with b:
-        horizon=st.slider("Planning horizon (weeks)",4,24,12)
-    with c:
-        target=st.slider("Target fill rate (%)",80,99,95)
-    section("02 · Economic assumptions")
-    st.caption("Illustrative values only. Replace them with validated company costs before operational use.")
-    ec1,ec2,ec3=st.columns(3)
-    with ec1:
-        order_cost=st.number_input("Cost per order (USD)",min_value=0.0,value=25.0,step=5.0,help="Fixed administrative/transport ordering cost per purchase order; excludes purchase value.")
-    with ec2:
-        holding_rate=st.number_input("Annual holding rate (%)",min_value=0.0,max_value=100.0,value=20.0,step=1.0,help="Annual carrying cost as a percentage of inventory acquisition value; prorated to the planning horizon.")
-    with ec3:
-        shortage_cost=st.number_input("Lost-sale penalty (USD/bottle)",min_value=0.0,value=10.0,step=1.0,help="Scenario cost for each bottle of unfulfilled forecast demand; excludes purchase value.")
-    params=(planning_date,horizon,target,order_cost,holding_rate,shortage_cost)
-    if st.button("Forecast, Compare & Generate Orders",type="primary",use_container_width=True):
-        try:
-            with st.spinner("Evaluating both policies across all products..."):
-                comparison,decisions,orders=compare_and_plan(
-                    produits,demande,as_of=planning_date,weeks=horizon,
-                    service_target=target/100,order_cost=order_cost,
-                    annual_holding_rate=holding_rate/100,stockout_cost=shortage_cost)
-            st.session_state["policy_optimization_result"]=(comparison,decisions,orders)
-            st.session_state["policy_optimization_params"]=params
-        except Exception as exc:
-            st.error(f"Planning failed: {exc}")
+    st.markdown('<div class="app-eyebrow">PLANNING / DECISION WORKSPACE</div>',unsafe_allow_html=True)
+    st.title("Purchase planning")
+    st.caption("One workflow: set your scenario → generate recommendations → review exceptions → export.")
+    with st.container(border=True):
+        st.markdown("**01 / Planning scenario**")
+        a,b,c=st.columns(3)
+        with a:
+            planning_date=st.date_input("Planning start",value=date(2026,10,1),min_value=date(2026,10,1),max_value=date(2027,3,31),key="auto_plan_date")
+        with b:
+            horizon=st.slider("Horizon (weeks)",4,24,12)
+        with c:
+            target=st.slider("Target fill rate (%)",80,99,95)
+        with st.expander("Advanced settings · economic assumptions",expanded=False):
+            st.caption("Illustrative values. Replace with verified company data before operational use.")
+            e1,e2,e3=st.columns(3)
+            with e1: order_cost=st.number_input("Cost per order (USD)",min_value=0.0,value=25.0,step=5.0)
+            with e2: holding_rate=st.number_input("Annual holding rate (%)",min_value=0.0,max_value=100.0,value=20.0,step=1.0)
+            with e3: shortage_cost=st.number_input("Lost-sale penalty (USD/bottle)",min_value=0.0,value=10.0,step=1.0)
+        params=(planning_date,horizon,target,order_cost,holding_rate,shortage_cost)
+        if st.button("Generate purchase recommendations →",type="primary",use_container_width=True,key="generate_plan"):
+            try:
+                with st.spinner("Comparing policies and calculating proposals..."):
+                    comparison,decisions,orders=compare_and_plan(produits,demande,as_of=planning_date,weeks=horizon,service_target=target/100,order_cost=order_cost,annual_holding_rate=holding_rate/100,stockout_cost=shortage_cost)
+                st.session_state["policy_optimization_result"]=(comparison,decisions,orders)
+                st.session_state["policy_optimization_params"]=params
+            except Exception as exc:
+                st.error(f"Planning failed: {exc}")
     result=st.session_state.get("policy_optimization_result")
-    if result is not None:
+    if result is None:
+        st.info("Configure the scenario above, then select Generate purchase recommendations to view the action plan.",icon="ℹ️")
+    else:
         comparison,decisions,orders=result
-        if st.session_state.get("policy_optimization_params")!=params:
-            st.warning("Settings changed. Generate again to refresh the results.")
-        section("03 · Decision summary")
+        stale=st.session_state.get("policy_optimization_params")!=params
+        if stale: st.warning("Scenario settings changed. Regenerate before using or exporting these results.")
+        st.markdown("### 02 / Planning results")
         m1,m2,m3,m4=st.columns(4)
-        m1.metric("Products",len(decisions))
-        m2.metric("ROP selected",int((decisions["Selected policy"]=="ROP").sum()))
-        m3.metric("Periodic Review selected",int((decisions["Selected policy"]=="Periodic Review").sum()))
-        m4.metric("Below service target",int((~decisions["Meets target"]).sum()))
-        st.subheader("Modeled logistics cost")
-        st.caption("Cost = average stock × unit cost × annual holding rate × horizon days / 365 + number of orders × order cost + lost bottles × penalty. Purchase expenditure is shown separately and is not included in this comparison.")
-        st.metric("Total modeled cost — selected policies (USD)",f"{decisions['Total modeled cost (USD)'].sum():,.2f}")
+        m1.metric("Products analysed",len(decisions))
+        m2.metric("Service target met",int(decisions["Meets target"].sum()))
+        m3.metric("Require review",int((~decisions["Meets target"]).sum()))
+        m4.metric("Modeled logistics cost",f"${decisions['Total modeled cost (USD)'].sum():,.0f}")
         if (~decisions["Meets target"]).any():
-            st.warning("Some products have no policy meeting the target. Their proposals are marked REVIEW REQUIRED, not validated decisions.")
-        section("04 · Policy evaluation")
-        sku=st.selectbox("Product to inspect",decisions["SKU"].tolist(),key="auto_sku")
-        st.dataframe(comparison.loc[comparison["SKU"]==sku],hide_index=True,use_container_width=True)
-        section("05 · Selected policies by SKU")
-        st.dataframe(decisions,hide_index=True,use_container_width=True)
-        section("06 · Proposed purchase orders")
-        if orders.empty:
-            st.success("No purchase orders proposed for this scenario.")
-        else:
-            st.dataframe(orders,hide_index=True,use_container_width=True)
-            if (orders["Status"] != "PROPOSAL - NOT SENT").any():
-                st.warning("Export includes proposals requiring review. Do not transmit without validating service level, stock snapshot and supplier constraints.")
-            st.download_button(
-                "Download proposed orders (CSV)",
-                orders.to_csv(index=False).encode("utf-8-sig"),
-                file_name="maison_delorme_auto_purchase_proposals.csv",
-                mime="text/csv",use_container_width=True)
-        st.caption(
-            "IMPORTANT: Forecast-based planning only. No supplier order is transmitted. "
-            "Validate the current stock snapshot, existing inbound orders and supplier "
-            "constraints before operational use."
-        )
-
+            st.warning("Some products do not meet the service target. Their orders require manual review.")
+        tab_orders,tab_exceptions,tab_decisions,tab_detail=st.tabs(["Purchase proposals","Exceptions","Policy decisions","Explain a product"])
+        with tab_orders:
+            st.caption("Suggested orders only · nothing is transmitted to suppliers.")
+            if orders.empty: st.success("No orders suggested for this scenario.")
+            else:
+                st.dataframe(orders,hide_index=True,use_container_width=True)
+                st.download_button("Export purchase proposals · CSV",orders.to_csv(index=False).encode("utf-8-sig"),file_name="maison_delorme_purchase_proposals.csv",mime="text/csv",disabled=stale)
+        with tab_exceptions:
+            flagged=decisions.loc[~decisions["Meets target"]]
+            if flagged.empty: st.success("All selected policies meet the modeled target.")
+            else:
+                st.caption("Review these SKUs before acting. The model cannot guarantee the target with the tested settings.")
+                st.dataframe(flagged,hide_index=True,use_container_width=True)
+        with tab_decisions:
+            st.caption("One policy per SKU, selected from the modeled scenarios.")
+            st.dataframe(decisions,hide_index=True,use_container_width=True)
+        with tab_detail:
+            sku=st.selectbox("Select a product",decisions["SKU"].tolist(),key="auto_sku")
+            st.dataframe(comparison.loc[comparison["SKU"]==sku],hide_index=True,use_container_width=True)
+            st.caption("Comparison based on the same forecast. Estimated costs include holding, ordering and stockout penalties; purchase expenditure is excluded.")
+        with st.expander("Model assumptions and limitations"):
+            st.write("Historical demand ends September 2026. The October 1 stock snapshot is assumed and is not refreshed for later planning dates. Forecasts are estimates. The optimizer searches a limited parameter grid; results are not a global optimum. Existing purchase orders, minimum order quantities, pack sizes and variable lead times are not modeled. Economic inputs are scenario assumptions. Validate stock, suppliers and constraints before using any proposal.")
 
 elif page == "Import Database":
     hero("Database manager", "Prepare a replacement Excel dataset and review its structure before future activation.", "DATA MANAGEMENT / PREVIEW")
