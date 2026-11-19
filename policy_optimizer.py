@@ -3,7 +3,7 @@
 Offline planning scenarios only. No supplier orders are sent.
 Assumptions: deterministic lead times, no inbound POs, no MOQ/case packs,
 forecast mean demand and backtest-derived daily uncertainty. Policies are
-ranked by simulated fill rate then average stock; this is NOT cost optimality.
+ranked by modeled logistics cost subject to a forecast fill-rate constraint. Costs are scenario assumptions, not verified supplier costs.
 """
 from __future__ import annotations
 from datetime import date, timedelta
@@ -68,7 +68,9 @@ def _candidates(avg_daily, sd_month, lead_days, review, z):
 
 def compare_and_plan(products:pd.DataFrame, demand:pd.DataFrame, *,
                      as_of:date=date(2026,10,1), weeks:int=12,
-                     service_target:float=0.95, review_days:int=7):
+                     service_target:float=0.95, review_days:int=7,
+                     order_cost:float=25.0, annual_holding_rate:float=0.20,
+                     stockout_cost:float=10.0):
     """Return (comparison, selected_policy_by_sku, purchase_proposals).
 
     Evaluation uses forecast demand (not realized demand): results are scenario
@@ -79,6 +81,9 @@ def compare_and_plan(products:pd.DataFrame, demand:pd.DataFrame, *,
         raise ValueError('Planning date must be from 2026-10-01 through 2027-03-31.')
     if not 0.5<service_target<1 or not 1<=weeks<=24 or review_days<1:
         raise ValueError('Invalid service target, horizon or review interval.')
+    for label,value in [('Order cost',order_cost),('Annual holding rate',annual_holding_rate),('Stockout cost',stockout_cost)]:
+        if not np.isfinite(value) or value<0:
+            raise ValueError(f'{label} must be a finite nonnegative number.')
     z=NormalDist().inv_cdf(service_target)
     ids=demand.iloc[:,0].astype(str).str.strip()
     if ids.duplicated().any(): raise ValueError('Duplicate demand SKUs.')
@@ -106,13 +111,36 @@ def compare_and_plan(products:pd.DataFrame, demand:pd.DataFrame, *,
         for r,s in periodic_grid:
             res=_simulate(daily,as_of,days,stock,lead_days,'Periodic Review',review=r,target=s)
             candidates.append(('Periodic Review',0,0,r,s,res))
+        # All policies are evaluated on the same horizon and forecast.
+        # Annual holding cost is prorated over the actual planning days.
+        # Stockout penalty is shown separately and does not override the
+        # service-level feasibility constraint.
+        def costs(candidate):
+            res = candidate[5]
+            holding = res['avg_stock'] * unit_cost * annual_holding_rate * days / 365.0
+            ordering = len(res['orders']) * order_cost
+            shortage = res['lost'] * stockout_cost
+            return holding, ordering, shortage, holding + ordering + shortage
+
+        def meets(candidate):
+            return candidate[5]['fill_rate'] + 1e-8 >= service_target * 100
+
+        def rank_feasible(candidate):
+            h, o, sh, total = costs(candidate)
+            return (total, candidate[5]['avg_stock'], len(candidate[5]['orders']))
+
+        def rank_infeasible(candidate):
+            # If no solution meets the target, select a diagnostic candidate
+            # maximizing service, then minimizing cost; it is NOT approved.
+            return (-candidate[5]['fill_rate'], costs(candidate)[3], candidate[5]['avg_stock'])
+
         best_by_policy={}
         for policy in ('ROP','Periodic Review'):
             group=[c for c in candidates if c[0]==policy]
-            eligible=[c for c in group if c[5]['fill_rate']+1e-8>=service_target*100]
-            pool=eligible if eligible else group
-            best=min(pool,key=lambda c:(c[5]['avg_stock'],-c[5]['fill_rate'],len(c[5]['orders']))) if eligible else min(pool,key=lambda c:(-c[5]['fill_rate'],c[5]['avg_stock'],len(c[5]['orders'])))
+            eligible=[c for c in group if meets(c)]
+            best=min(eligible,key=rank_feasible) if eligible else min(group,key=rank_infeasible)
             best_by_policy[policy]=best
+            holding, ordering, shortage, total_cost = costs(best)
             comparisons.append({
                 'SKU':sku,'Product':str(row.get('Name','')),'Policy':policy,
                 'Forecast model':model,'Backtest MAE (monthly bottles)':round(mae,1),
@@ -121,25 +149,37 @@ def compare_and_plan(products:pd.DataFrame, demand:pd.DataFrame, *,
                 'Average stock (bottles)':round(best[5]['avg_stock'],1),
                 'Average inventory value (USD)':round(best[5]['avg_stock']*unit_cost,2),
                 'Orders':len(best[5]['orders']),
-                'Meets target':best[5]['fill_rate']+1e-8>=service_target*100,
+                'Holding cost (USD)':round(holding,2),
+                'Ordering cost (USD)':round(ordering,2),
+                'Stockout cost (USD)':round(shortage,2),
+                'Total modeled cost (USD)':round(total_cost,2),
+                'Meets target':meets(best),
                 'Q':best[1] if policy=='ROP' else None,
                 'ROP':best[2] if policy=='ROP' else None,
                 'R (days)':best[3] if policy=='Periodic Review' else None,
                 'S':best[4] if policy=='Periodic Review' else None,
             })
         winners=list(best_by_policy.values())
-        eligible=[c for c in winners if c[5]['fill_rate']+1e-8>=service_target*100]
+        eligible=[c for c in winners if meets(c)]
         if eligible:
-            chosen=min(eligible,key=lambda c:(c[5]['avg_stock'],len(c[5]['orders'])))
-            reason='Target met; lowest average inventory among eligible policies'
+            chosen=min(eligible,key=rank_feasible)
+            reason='Target met; lowest modeled total cost among eligible policies'
+            status='TARGET MET - REVIEW BEFORE ORDERING'
         else:
-            chosen=min(winners,key=lambda c:(-c[5]['fill_rate'],c[5]['avg_stock']))
-            reason='Neither meets target; highest forecast fill rate (review required)'
+            chosen=min(winners,key=rank_infeasible)
+            reason='NO FEASIBLE POLICY: diagnostic only; improve inputs or parameters'
+            status='SERVICE TARGET NOT MET - REVIEW REQUIRED'
         policy,q,rop,r,s,res=chosen
+        holding, ordering, shortage, total_cost = costs(chosen)
         selected.append({'SKU':sku,'Product':str(row.get('Name','')),'Selected policy':policy,
                          'Forecast fill rate (%)':round(res['fill_rate'],2),
                          'Average stock (bottles)':round(res['avg_stock'],1),
-                         'Meets target':res['fill_rate']+1e-8>=service_target*100,
+                         'Meets target':meets(chosen),
+                         'Holding cost (USD)':round(holding,2),
+                         'Ordering cost (USD)':round(ordering,2),
+                         'Stockout cost (USD)':round(shortage,2),
+                         'Total modeled cost (USD)':round(total_cost,2),
+                         'Decision status':status,
                          'Q':q if policy=='ROP' else None,'ROP':rop if policy=='ROP' else None,
                          'R (days)':r if policy=='Periodic Review' else None,
                          'S':s if policy=='Periodic Review' else None,
@@ -150,7 +190,7 @@ def compare_and_plan(products:pd.DataFrame, demand:pd.DataFrame, *,
                              'Selected policy':policy,'Order date':order_date.isoformat(),
                              'Expected delivery':delivery.isoformat(),
                              'Quantity (bottles)':qty,'Purchase value (USD)':round(qty*unit_cost,2),
-                             'Status':'PROPOSAL - NOT SENT'})
+                             'Status':('PROPOSAL - NOT SENT' if meets(chosen) else 'REVIEW REQUIRED - TARGET NOT MET')})
     orders=pd.DataFrame(proposed,columns=['SKU','Product','Supplier','Selected policy','Order date','Expected delivery','Quantity (bottles)','Purchase value (USD)','Status'])
     if not orders.empty: orders=orders.sort_values(['Order date','SKU']).reset_index(drop=True)
     return pd.DataFrame(comparisons),pd.DataFrame(selected),orders
