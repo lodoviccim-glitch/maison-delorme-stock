@@ -29,83 +29,11 @@ def couleur_cellule_abc(valeur):
     return f"background-color: {fond}; color: {texte}; font-weight: bold; text-align: center"
 
 
-st.set_page_config(page_title="Maison Delorme | Stock Intelligence", layout="wide")
+st.set_page_config(page_title="Maison Delorme | Stock Intelligence", page_icon="🥃", layout="wide")
 NAVY, GOLD = "#142338", "#BE9252"
 
 st.markdown("""
 <style>
-/* ===== SIDEBAR — PROFESSIONAL NAVIGATION ===== */
-
-/* Navigation spacing */
-[data-testid="stSidebar"] [role="radiogroup"] {
-    gap: 6px;
-}
-
-/* Each navigation item */
-[data-testid="stSidebar"] [role="radiogroup"] label {
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: 10px;
-    padding: 11px 14px;
-    transition: background 0.2s ease, border-color 0.2s ease;
-    cursor: pointer;
-}
-
-/* Hover */
-[data-testid="stSidebar"] [role="radiogroup"] label:hover {
-    background: #25364C;
-    border-color: #354A62;
-}
-
-/* Hide radio circles */
-[data-testid="stSidebar"] [role="radiogroup"] label
-[data-testid="stWidgetLabel"] {
-    margin: 0;
-}
-
-[data-testid="stSidebar"] [role="radiogroup"] label
-[data-baseweb="radio"] > div:first-child {
-    display: none;
-}
-
-/* Active item */
-[data-testid="stSidebar"] [role="radiogroup"]
-label:has(input:checked) {
-    background: #BE9252;
-    border-color: #BE9252;
-    box-shadow: 0 3px 12px rgba(190,146,82,0.18);
-}
-
-/* Active text */
-[data-testid="stSidebar"] [role="radiogroup"]
-label:has(input:checked) p {
-    color: #142338 !important;
-    font-weight: 700 !important;
-}
-
-/* Navigation text */
-[data-testid="stSidebar"] [role="radiogroup"] p {
-    font-size: 0.94rem;
-    font-weight: 500;
-}
-
-/* Dividers */
-[data-testid="stSidebar"] hr {
-    border-color: #35455A;
-    margin: 18px 0;
-}
-
-/* Product selector */
-[data-testid="stSidebar"] [data-baseweb="select"] > div {
-    border-radius: 10px !important;
-    border: 1px solid #DCE3EC !important;
-}
-
-/* Sidebar buttons */
-[data-testid="stSidebar"] button {
-    border-radius: 10px;
-    font-weight: 600;
-}
 .stApp {background:#F5F7FA}
 .block-container {max-width:1250px;padding-top:2rem}
 [data-testid="stSidebar"] {background:#142338}
@@ -254,8 +182,7 @@ PAGES = [
     "Tableau de bord",
     "Analyse de la demande",
     "Catalogue",
-    "Import Database",
-
+    "Automatic Replenishment",
 ]
 
 if "page_active" not in st.session_state:
@@ -697,41 +624,69 @@ elif page == "Catalogue":
         st.caption("ABC calculé sur les 24 mois : demande totale × coût unitaire (USD). Produits classés par valeur décroissante ; A jusqu'au franchissement de 80 % de valeur cumulée, B jusqu'à 95 %, C au-delà. La classe ne change pas avec les paramètres de simulation.")
         st.dataframe(tableau, hide_index=True, use_container_width=True)
 
-elif page == "Import Database":
-    st.title("Import Database")
-    st.caption("DATABASE MANAGEMENT · FUTURE FEATURE")
+elif page == "Automatic Replenishment":
+    from datetime import date
+    from replenishment_engine import generate_plan
 
-    st.markdown("### Update your inventory database")
-
-    st.write(
-        "Upload a new Excel database to update product information, "
-        "demand history and inventory parameters."
+    st.title("Automatic Replenishment")
+    st.caption("FORECASTING · INVENTORY PLANNING · PURCHASE ORDER PROPOSALS")
+    st.info(
+        "The engine calculates what to order, when, and how much for all 20 SKUs. "
+        "These are **draft recommendations**, not supplier orders."
     )
-
-    uploaded_file = st.file_uploader(
-        "Select an Excel file",
-        type=["xlsx"],
-        help="Excel files only (.xlsx)"
-    )
-
-    if uploaded_file is not None:
-        st.success(f"File selected: {uploaded_file.name}")
-
-        st.info(
-            "File validation and database replacement "
-            "will be available in the final version."
+    with st.expander("Planning assumptions — read before generating", expanded=False):
+        st.write(
+            "The demand history ends in September 2026. The source's Quantity_On_Hand "
+            "is treated as a snapshot on October 1, 2026. Select October 1 for the "
+            "most consistent scenario; later dates are hypothetical unless stock "
+            "is refreshed. Existing inbound purchase orders, supplier MOQs, case "
+            "packs, budgets and holding/ordering costs are not supplied and are "
+            "not considered. Lead times are fixed and forecast uncertainty is "
+            "estimated from historical backtest errors."
         )
-
-    st.divider()
-
-    st.button(
-        "Apply New Database",
-        type="primary",
-        disabled=True,
-        use_container_width=True
-    )
-
-    st.caption(
-        "Coming in V1: automatic validation, database replacement "
-        "and synchronization with the inventory simulator."
-    )
+    a,b,c=st.columns(3)
+    with a:
+        planning_date=st.date_input(
+            "Planning start date (historical snapshot)",
+            value=date(2026,10,1), min_value=date(2026,10,1),
+            max_value=date(2027,3,31), key="auto_plan_date")
+    with b:
+        horizon=st.slider("Planning horizon (weeks)",4,24,12,step=1)
+    with c:
+        target=st.slider("Target service level (%)",80,99,95,step=1)
+    if st.button("Generate Replenishment Plan", type="primary", use_container_width=True):
+        try:
+            overview,orders=generate_plan(
+                produits,demande,as_of=planning_date,weeks=horizon,
+                service_target=target/100)
+            st.session_state["replenishment_result"]=(overview,orders)
+            st.session_state["replenishment_params"]=(planning_date,horizon,target)
+        except Exception as exc:
+            st.error(f"Unable to generate plan: {exc}")
+    result=st.session_state.get("replenishment_result")
+    if result is not None:
+        overview,orders=result
+        params=st.session_state.get("replenishment_params")
+        if params!=(planning_date,horizon,target):
+            st.warning("Settings changed. Click Generate again to update the plan.")
+        m1,m2,m3=st.columns(3)
+        m1.metric("Products analysed",len(overview))
+        m2.metric("Suggested order lines",len(orders))
+        m3.metric("Estimated purchasing value",f"{orders['Purchase value (USD)'].sum():,.0f} USD" if not orders.empty else "0 USD")
+        st.subheader("Forecast and stockout risk by product")
+        st.dataframe(overview,hide_index=True,use_container_width=True)
+        st.subheader("Dated purchase order proposals")
+        if orders.empty:
+            st.success("No replenishment orders proposed for the selected scenario.")
+        else:
+            st.dataframe(orders,hide_index=True,use_container_width=True)
+            st.download_button(
+                "Download proposed orders (CSV)",
+                orders.to_csv(index=False).encode("utf-8-sig"),
+                file_name="maison_delorme_purchase_order_proposals.csv",
+                mime="text/csv",use_container_width=True)
+        st.caption(
+            "IMPORTANT: No order is transmitted. Validate current inventory, "
+            "open orders, suppliers' minimum quantities and dates before execution. "
+            "Forecasts are estimates, not exact future demand."
+        )
