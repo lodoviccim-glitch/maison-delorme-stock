@@ -33,7 +33,7 @@ st.set_page_config(page_title="Maison Delorme | Stock Intelligence", page_icon="
 NAVY, GOLD = "#142338", "#BE9252"
 
 st.markdown("""
-
+<style>
 /* ===== SIDEBAR — PROFESSIONAL NAVIGATION ===== */
 
 /* Navigation spacing */
@@ -106,8 +106,6 @@ label:has(input:checked) p {
     border-radius: 10px;
     font-weight: 600;
 }
-
-<style>
 .stApp {background:#F5F7FA}
 .block-container {max-width:1250px;padding-top:2rem}
 [data-testid="stSidebar"] {background:#142338}
